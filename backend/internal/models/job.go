@@ -8,4 +8,5 @@ type Job struct {
 	Description string `json:"description"`
 	Link        string `json:"link"`
 	Status      string `json:"status" gorm:"default:'applied'"`
+	Tags        string `json:"tags"`
 }

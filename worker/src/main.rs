@@ -1,51 +1,75 @@
-use regex::Regex;
-use std::collections::HashSet;
+mod config;
+mod models;
+mod nlp;
 
-// Lista básica de "Stop Words"
-const STOP_WORDS: &[&str] = &[
-    "a", "an", "the", "and", "or", "but", "is", "are", "was", "were",
-    "of", "in", "on", "at", "to", "for", "with", "by", "from", "about",
-    "we", "you", "your", "our", "be", "have", "has", "looking", "seeking",
-    "experience", "knowledge", "skills", "plus", "years", "working",
-];
+use dotenv::dotenv;
+use futures_util::StreamExt;
+use redis::AsyncCommands;
+use sqlx::postgres::PgPoolOptions; 
+use models::JobEvent;
 
-fn main() {
-    // 1. Simulação: Um texto sujo que viria da descrição da vaga
-    let raw_text = "We are looking for a Senior Go Developer with experience in Docker, Kubernetes and Microservices. Rust is a plus!";
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    dotenv().ok();
+    println!("🦀 Worker Rust Iniciando...");
+
+    // 1. Configurações
+    let redis_url = config::get_redis_url();
+    let db_url = config::get_database_url();
+
+    // 2. Conecta no Banco de Dados (Postgres)
+    // O Pool gerencia várias conexões para ser super rápido
+    println!("Conectando ao Postgres...");
+    let db_pool = PgPoolOptions::new()
+        .max_connections(5)
+        .connect(&db_url)
+        .await?;
+    println!("Postgres conectado!");
+
+    // 3. Conecta no Redis
+    let client = redis::Client::open(redis_url)?;
+    let conn = client.get_async_connection().await?;
+    let mut pubsub = conn.into_pubsub();
+    pubsub.subscribe("job_created").await?;
     
-    println!("Texto Original:\n'{}'\n", raw_text);
+    println!("Redis conectado! Aguardando vagas...");
 
-    // 2. Processa
-    let keywords = extract_keywords(raw_text);
+    let mut on_message = pubsub.into_on_message();
 
-    // 3. Mostra o resultado
-    println!("Keywords Extraídas (Rust):");
-    println!("{:?}", keywords);
-}
+    // 4. Loop Principal
+    while let Some(msg) = on_message.next().await {
+        if let Ok(payload) = msg.get_payload::<String>() {
+            // Se falhar o JSON, ignora e continua
+            if let Ok(job) = serde_json::from_str::<JobEvent>(&payload) {
+                println!("\nVaga Recebida ID: {}", job.id);
+                
+                // A. Processamento (CPU Bound)
+                let keywords = nlp::extract_keywords(&job.description);
+                
+                if keywords.is_empty() {
+                    println!("Nenhuma tag encontrada.");
+                    continue;
+                }
 
-fn extract_keywords(text: &str) -> Vec<String> {
-    // Passo A: Converte para minúsculas
-    let text_lower = text.to_lowercase();
+                // Transforma o vetor ["go", "rust"] em string "go,rust"
+                let tags_string = keywords.join(",");
+                println!("Tags geradas: {}", tags_string);
 
-    // Passo B: Regex para pegar apenas palavras (remove pontuação .,!?)
-    let re = Regex::new(r"\b[a-zA-Z0-9#+.]+\b").unwrap();
+                // B. Persistência (IO Bound) - Salva no Banco
+                // Atenção: O GORM cria a tabela como 'jobs' e 'id' geralmente é bigint (i64)
+                let result = sqlx::query("UPDATE jobs SET tags = $1 WHERE id = $2")
+                    .bind(&tags_string)
+                    .bind(job.id as i64) // Cast seguro para garantir compatibilidade
+                    .execute(&db_pool)
+                    .await;
 
-    // Passo C: HashSet para garantir que não teremos palavras repetidas
-    let mut unique_words = HashSet::new();
-
-    for cap in re.captures_iter(&text_lower) {
-        if let Some(word_match) = cap.get(0) {
-            let word = word_match.as_str();
-
-            // Passo D: Filtra se NÃO é uma stop word
-            if !STOP_WORDS.contains(&word) {
-                unique_words.insert(word.to_string());
+                match result {
+                    Ok(_) => println!("Tags salvas no banco com sucesso!"),
+                    Err(e) => eprintln!("Erro ao salvar no banco: {}", e),
+                }
             }
         }
     }
 
-    // Retorna como um vetor (Array dinâmico) ordenado
-    let mut result: Vec<String> = unique_words.into_iter().collect();
-    result.sort();
-    result
+    Ok(())
 }
