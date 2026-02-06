@@ -80,3 +80,69 @@ func (h *JobHandler) GetJobCards(c *gin.Context) {
 		"cards":     cards,
 	})
 }
+
+// DeleteJob remove um job do banco de dados.
+func (h *JobHandler) DeleteJob(c *gin.Context) {
+	id := c.Param("id")
+
+	// Se o GORM não encontrar o registro para deletar, ele retorna um erro.
+	result := h.DB.Unscoped().Delete(&models.Job{}, id)
+	if result.Error != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": result.Error.Error()})
+		return
+	}
+
+	// O GORM informa quantos registros foram afetados. Se for 0, o ID não foi encontrado.
+	if result.RowsAffected == 0 {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Vaga não encontrada para exclusão"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Vaga excluída com sucesso"})
+}
+
+// UpdateJobStatus atualiza o status de uma vaga.
+func (h *JobHandler) UpdateJobStatus(c *gin.Context) {
+	id := c.Param("id")
+
+	// Define uma struct local para fazer o bind apenas do campo de status.
+	var statusUpdate struct {
+		Status string `json:"status"`
+	}
+
+	// Faz o bind do JSON do corpo da requisição para a struct.
+	if err := c.ShouldBindJSON(&statusUpdate); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "JSON inválido: " + err.Error()})
+		return
+	}
+
+	// Valida se o status fornecido é um dos valores permitidos.
+	status := statusUpdate.Status
+	allowedStatuses := map[string]bool{
+		"applied":   true,
+		"interview": true,
+		"offer":     true,
+		"rejected":  true,
+	}
+
+	if !allowedStatuses[status] {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Status inválido. Use 'applied', 'interview', 'offer' ou 'rejected'"})
+		return
+	}
+
+	// Busca o job para garantir que ele existe antes de atualizar.
+	var job models.Job
+	if result := h.DB.First(&job, id); result.Error != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Vaga não encontrada"})
+		return
+	}
+
+	// Atualiza apenas o campo 'status' do job encontrado.
+	result := h.DB.Model(&job).Update("status", status)
+	if result.Error != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Falha ao atualizar o status: " + result.Error.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, job)
+}

@@ -17,5 +17,7 @@ func SetupRoutes(r *gin.Engine, db *gorm.DB, rdb *redis.Client) {
 		api.POST("/jobs", jobHandler.CreateJob)
 		api.GET("/jobs", jobHandler.ListJobs)
 		api.GET("/jobs/:id/cards", jobHandler.GetJobCards)
+		api.DELETE("/jobs/:id", jobHandler.DeleteJob)
+		api.PATCH("/jobs/:id/status", jobHandler.UpdateJobStatus)
 	}
 }

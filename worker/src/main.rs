@@ -1,6 +1,7 @@
 mod config;
 mod models;
 mod nlp;
+mod techs;
 
 use dotenv::dotenv;
 use futures_util::StreamExt;
