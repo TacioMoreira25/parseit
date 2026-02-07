@@ -146,3 +146,53 @@ func (h *JobHandler) UpdateJobStatus(c *gin.Context) {
 
 	c.JSON(http.StatusOK, job)
 }
+
+func (h *JobHandler) UpdateJob(c *gin.Context) {
+	id := c.Param("id")
+
+	// Encontra a vaga existente
+	var job models.Job
+	if result := h.DB.First(&job, id); result.Error != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Vaga não encontrada"})
+		return
+	}
+
+	// Define uma struct para o payload de atualização
+	var updatePayload struct {
+		Title       *string `json:"title"`
+		Description *string `json:"description"`
+		Link        *string `json:"link"`
+	}
+
+	// Faz o bind do JSON, ignorando campos não enviados
+	if err := c.ShouldBindJSON(&updatePayload); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "JSON inválido: " + err.Error()})
+		return
+	}
+
+	// Atualiza o modelo do GORM com os novos valores, se eles não forem nulos
+	updates := make(map[string]interface{})
+	if updatePayload.Title != nil {
+		updates["title"] = *updatePayload.Title
+	}
+	if updatePayload.Description != nil {
+		updates["description"] = *updatePayload.Description
+	}
+	if updatePayload.Link != nil {
+		updates["link"] = *updatePayload.Link
+	}
+
+	// Se nada foi enviado, não faz nada
+	if len(updates) == 0 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Nenhum campo para atualizar foi fornecido"})
+		return
+	}
+
+	// Aplica as atualizações no banco de dados
+	if result := h.DB.Model(&job).Updates(updates); result.Error != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Falha ao atualizar a vaga: " + result.Error.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, job)
+}

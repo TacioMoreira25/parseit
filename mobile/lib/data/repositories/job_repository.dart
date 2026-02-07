@@ -1,4 +1,5 @@
 import '../../domain/models/job.dart';
+import '../../domain/models/vocabulary_term.dart';
 import '../services/api_service.dart';
 
 class JobRepository {
@@ -7,16 +8,10 @@ class JobRepository {
   JobRepository(this._apiService);
 
   Future<List<Job>> fetchJobs() async {
-    try {
-      final List<dynamic> jobData = await _apiService.fetchJobs();
-      final List<Job> jobs = jobData
-          .map((json) => Job.fromJson(json as Map<String, dynamic>))
-          .toList();
-      jobs.sort((a, b) => b.createdAt.compareTo(a.createdAt));
-      return jobs;
-    } catch (e) {
-      rethrow;
-    }
+    final List<dynamic> jobData = await _apiService.fetchJobs();
+    return jobData
+        .map((json) => Job.fromJson(json as Map<String, dynamic>))
+        .toList();
   }
 
   Future<void> createJob({
@@ -24,32 +19,47 @@ class JobRepository {
     String? link,
     required String description,
   }) async {
-    try {
-      final data = {
-        'title': title,
-        'link': link ?? '',
-        'description': description,
-      };
-      await _apiService.createJob(data);
-    } catch (e) {
-      rethrow;
-    }
+    final data = {
+      'title': title,
+      'link': link ?? '',
+      'description': description,
+    };
+    await _apiService.createJob(data);
   }
 
-  /// Deletes a job by its ID.
   Future<void> deleteJob(String jobId) async {
-    try {
-      await _apiService.deleteJob(jobId);
-    } catch (e) {
-      rethrow;
-    }
+    await _apiService.deleteJob(jobId);
   }
 
-  /// Updates the status of a job.
   Future<void> updateJobStatus(String jobId, String newStatus) async {
+    await _apiService.updateStatus(jobId, newStatus);
+  }
+
+  Future<void> updateJob({
+    required String jobId,
+    required String title,
+    String? link,
+    required String description,
+  }) async {
+    final data = {'title': title, 'link': link, 'description': description};
+    data.removeWhere((key, value) => value == null);
+    await _apiService.updateJob(jobId, data);
+  }
+
+  /// Looks up vocabulary for a list of tags.
+  Future<List<VocabularyTerm>> lookupVocabulary(List<String> tags) async {
+    // CORREÇÃO: Adicionada uma verificação para não chamar a API com uma lista vazia.
+    if (tags.isEmpty) {
+      return []; // Retorna uma lista vazia imediatamente.
+    }
+
     try {
-      await _apiService.updateStatus(jobId, newStatus);
+      final List<dynamic> data = await _apiService.lookupVocabulary(tags);
+      return data
+          .map((json) => VocabularyTerm.fromJson(json as Map<String, dynamic>))
+          .toList();
     } catch (e) {
+      // O ViewModel será responsável por lidar com este erro.
       rethrow;
     }
   }

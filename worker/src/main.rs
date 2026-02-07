@@ -1,12 +1,12 @@
 mod config;
+mod dictionary;
 mod models;
 mod nlp;
 mod techs;
 
 use dotenv::dotenv;
 use futures_util::StreamExt;
-use redis::AsyncCommands;
-use sqlx::postgres::PgPoolOptions; 
+use sqlx::postgres::{PgPool, PgPoolOptions};
 use models::JobEvent;
 
 #[tokio::main]
@@ -19,7 +19,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let db_url = config::get_database_url();
 
     // 2. Conecta no Banco de Dados (Postgres)
-    // O Pool gerencia várias conexões para ser super rápido
     println!("Conectando ao Postgres...");
     let db_pool = PgPoolOptions::new()
         .max_connections(5)
@@ -32,7 +31,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let conn = client.get_async_connection().await?;
     let mut pubsub = conn.into_pubsub();
     pubsub.subscribe("job_created").await?;
-    
+
     println!("Redis conectado! Aguardando vagas...");
 
     let mut on_message = pubsub.into_on_message();
@@ -43,22 +42,24 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             // Se falhar o JSON, ignora e continua
             if let Ok(job) = serde_json::from_str::<JobEvent>(&payload) {
                 println!("\nVaga Recebida ID: {}", job.id);
-                
+
                 // A. Processamento (CPU Bound)
                 let keywords = nlp::extract_keywords(&job.description);
-                
+
                 if keywords.is_empty() {
                     println!("Nenhuma tag encontrada.");
                     continue;
                 }
+                
+                // [+] NOVO: Processa as tags para popular a tabela de vocabulário
+                handle_vocabulary_processing(&db_pool, &keywords).await;
 
                 // Transforma o vetor ["go", "rust"] em string "go,rust"
                 let tags_string = keywords.join(",");
                 println!("Tags geradas: {}", tags_string);
 
                 // B. Persistência (IO Bound) - Salva no Banco
-                // Atenção: O GORM cria a tabela como 'jobs' e 'id' geralmente é bigint (i64)
-                let result = sqlx::query("UPDATE jobs SET tags = $1 WHERE id = $2")
+                let result = sqlx::query("UPDATE jobs SET tags =  WHERE id = $2")
                     .bind(&tags_string)
                     .bind(job.id as i64) // Cast seguro para garantir compatibilidade
                     .execute(&db_pool)
@@ -73,4 +74,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
 
     Ok(())
+}
+
+/// Função wrapper para lidar com o processamento de vocabulário e logar erros.
+async fn handle_vocabulary_processing(pool: &PgPool, tags: &[String]) {
+    println!("Iniciando processamento de vocabulário para {} tags...", tags.len());
+    if let Err(e) = dictionary::process_tags(pool, tags).await {
+        eprintln!("Falha ao processar e popular vocabulário: {}", e);
+    }
 }

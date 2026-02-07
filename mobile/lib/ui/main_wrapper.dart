@@ -31,14 +31,12 @@ class _MainWrapperState extends State<MainWrapper> {
 
     return Scaffold(
       body: IndexedStack(index: _currentIndex, children: _screens),
-      floatingActionButton:
-          _currentIndex ==
-              0 // Show FAB only on Dashboard screen
+      floatingActionButton: _currentIndex == 0
           ? FloatingActionButton(
+              // CORREÇÃO: Adicionada uma tag única para o Hero.
+              heroTag: 'add_job_fab',
               onPressed: () {
-                // CORRECTED: Use `push` to add the page to the stack and allow returning.
                 context.push('/add_job').then((_) {
-                  // After returning from the add job screen, refresh the list.
                   dashboardViewModel.fetchJobs();
                 });
               },

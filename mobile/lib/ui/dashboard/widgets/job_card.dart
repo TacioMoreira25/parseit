@@ -2,7 +2,6 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import '../../../domain/models/job.dart';
 import '../view_models/dashboard_view_model.dart';
@@ -12,14 +11,9 @@ class JobCard extends StatelessWidget {
 
   const JobCard({super.key, required this.job});
 
-  void _navigateToDetails(BuildContext context) {
-    context.push('/details', extra: job);
-  }
-
   @override
   Widget build(BuildContext context) {
     final statusStyle = _getStatusStyle(job.status);
-
     return Card(
       elevation: 2.0,
       shadowColor: Colors.black.withOpacity(0.05),
@@ -28,7 +22,7 @@ class JobCard extends StatelessWidget {
       color: Colors.white,
       clipBehavior: Clip.antiAlias,
       child: InkWell(
-        onTap: () => _navigateToDetails(context),
+        onTap: () => context.push('/details', extra: job),
         onLongPress: () => _showManagementBottomSheet(context, job),
         child: Padding(
           padding: const EdgeInsets.all(16.0),
@@ -143,6 +137,7 @@ class JobCard extends StatelessWidget {
   void _showManagementBottomSheet(BuildContext context, Job job) {
     showModalBottomSheet(
       context: context,
+      isScrollControlled: true,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
@@ -151,111 +146,122 @@ class JobCard extends StatelessWidget {
           modalContext,
           listen: false,
         );
-
-        return StatefulBuilder(
-          builder: (BuildContext context, StateSetter setModalState) {
-            return Padding(
-              padding: const EdgeInsets.all(20.0),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Gerenciar Vaga',
-                    style: GoogleFonts.inter(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    job.title,
-                    style: GoogleFonts.inter(
-                      fontSize: 15,
-                      color: Colors.grey[600],
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  const Divider(height: 32),
-                  Text(
-                    'Alterar Status',
-                    style: GoogleFonts.inter(fontWeight: FontWeight.bold),
-                  ),
-                  const SizedBox(height: 16),
-                  Wrap(
-                    spacing: 10,
-                    children: ['applied', 'interview', 'offer', 'rejected'].map(
-                      (status) {
-                        final isSelected = job.status == status;
-                        final style = _getStatusStyle(status);
-                        return ChoiceChip(
-                          label: Text(
-                            status,
-                            style: GoogleFonts.inter(
-                              color: isSelected
-                                  ? style.textColor
-                                  : Colors.black87,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                          selected: isSelected,
-                          onSelected: (selected) async {
-                            if (selected) {
-                              Navigator.pop(modalContext); // Close modal first
-                              final success = await viewModel.updateJobStatus(
-                                job.id,
-                                status,
-                              );
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: Text(
-                                    success
-                                        ? 'Status atualizado para: $status'
-                                        : viewModel.errorMessage,
-                                  ),
-                                  backgroundColor: success
-                                      ? Colors.green
-                                      : Colors.red,
-                                ),
-                              );
-                            }
-                          },
-                          selectedColor: style.backgroundColor,
-                          backgroundColor: Colors.grey[200],
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(20),
-                            side: BorderSide.none,
-                          ),
-                        );
-                      },
-                    ).toList(),
-                  ),
-                  const Divider(height: 32),
-                  ListTile(
-                    leading: const Icon(
-                      CupertinoIcons.trash,
-                      color: Colors.red,
-                    ),
-                    title: Text(
-                      'Excluir Vaga',
-                      style: GoogleFonts.inter(
-                        color: Colors.red,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    onTap: () {
-                      Navigator.pop(modalContext); // Close bottom sheet
-                      _showDeleteConfirmationDialog(context, viewModel, job);
-                    },
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                  ),
-                ],
+        return SingleChildScrollView(
+          padding: const EdgeInsets.fromLTRB(20, 20, 20, 30),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Gerenciar Vaga',
+                style: GoogleFonts.inter(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
-            );
-          },
+              const SizedBox(height: 8),
+              Text(
+                job.title,
+                style: GoogleFonts.inter(fontSize: 15, color: Colors.grey[600]),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+              const Divider(height: 32),
+              ListTile(
+                leading: const Icon(
+                  CupertinoIcons.pencil,
+                  color: Colors.blueAccent,
+                ),
+                title: Text(
+                  'Editar Detalhes',
+                  style: GoogleFonts.inter(
+                    fontWeight: FontWeight.w600,
+                    color: Colors.blueAccent,
+                  ),
+                ),
+                onTap: () {
+                  Navigator.pop(modalContext); // Fecha o modal
+                  context.push(
+                    '/edit_job',
+                    extra: job,
+                  ); // Navega para a nova tela de edição
+                },
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+              ),
+              const Divider(height: 16, indent: 16, endIndent: 16),
+              Text(
+                'Alterar Status',
+                style: GoogleFonts.inter(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 16,
+                ),
+              ),
+              const SizedBox(height: 10),
+              ...['applied', 'interview', 'offer', 'rejected'].map((status) {
+                final isSelected = job.status == status;
+                final style = _getStatusStyle(status);
+                return ListTile(
+                  title: Text(
+                    status,
+                    style: GoogleFonts.inter(
+                      fontWeight: FontWeight.w500,
+                      color: isSelected ? style.textColor : Colors.black87,
+                    ),
+                  ),
+                  leading: Icon(
+                    isSelected
+                        ? CupertinoIcons.check_mark_circled_solid
+                        : CupertinoIcons.circle,
+                    color: isSelected ? style.textColor : Colors.grey[400],
+                  ),
+                  tileColor: isSelected
+                      ? style.backgroundColor.withOpacity(0.5)
+                      : Colors.transparent,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  onTap: () async {
+                    Navigator.pop(modalContext);
+                    final success = await viewModel.updateJobStatus(
+                      job.id,
+                      status,
+                    );
+                    if (!context.mounted) return;
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(
+                          success
+                              ? 'Status atualizado para: $status'
+                              : viewModel.errorMessage,
+                        ),
+                        backgroundColor: success ? Colors.green : Colors.red,
+                      ),
+                    );
+                  },
+                );
+              }).toList(),
+              const Divider(height: 32),
+              ListTile(
+                leading: const Icon(CupertinoIcons.trash, color: Colors.red),
+                title: Text(
+                  'Excluir Vaga',
+                  style: GoogleFonts.inter(
+                    color: Colors.red,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                onTap: () {
+                  Navigator.pop(modalContext);
+                  _showDeleteConfirmationDialog(context, viewModel, job);
+                },
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+              ),
+            ],
+          ),
         );
       },
     );
@@ -280,8 +286,9 @@ class JobCard extends StatelessWidget {
           ),
           FilledButton(
             onPressed: () async {
-              Navigator.pop(dialogContext); // Close dialog
+              Navigator.pop(dialogContext);
               final success = await viewModel.deleteJob(job.id);
+              if (!context.mounted) return;
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
                   content: Text(

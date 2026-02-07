@@ -9,7 +9,6 @@ import 'ui/core/themes/app_theme.dart';
 import 'ui/dashboard/view_models/dashboard_view_model.dart';
 
 void main() {
-  // It's good practice to set up dependencies here
   final ApiService apiService = ApiService();
   final JobRepository jobRepository = JobRepository(apiService);
 
@@ -25,13 +24,15 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
+        // CORREÇÃO: Fornece o JobRepository para todo o aplicativo.
+        // Qualquer widget filho agora pode acessá-lo com context.read<JobRepository>().
+        Provider<JobRepository>.value(value: jobRepository),
+
+        // Seus outros providers que dependem do repositório.
         ChangeNotifierProvider(
           create: (_) => DashboardViewModel(jobRepository),
         ),
-        ChangeNotifierProvider(
-          // Pass the repository to the AddJobViewModel
-          create: (_) => AddJobViewModel(jobRepository),
-        ),
+        ChangeNotifierProvider(create: (_) => AddJobViewModel(jobRepository)),
       ],
       child: MaterialApp.router(
         title: 'ParseIt',

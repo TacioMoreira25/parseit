@@ -33,13 +33,20 @@ This represents a distributed system with a Go backend API and a Rust background
       Redis *redis.Client
   }
   ```
-- **Error Handling**: Return clean JSON errors with appropriate HTTP status.
+### Error Handling**: Return clean JSON errors with appropriate HTTP status.
+
+## API Endpoints
+- `POST /api/v1/jobs`: Create a new job.
+- `GET /api/v1/jobs`: List all jobs.
+- `GET /api/v1/jobs/:id/cards`: Get cards for a specific job.
+- `DELETE /api/v1/jobs/:id`: Delete a job.
+- `PATCH /api/v1/jobs/:id`: Update a job's title, description, or link.
+- `PATCH /api/v1/jobs/:id/status`: Update a job's status.
 
 ### Worker (Rust)
 - **Async Runtime**: Tokio.
 - **Database**: SQLx for async Postgres interactions.
 - **NLP**: Custom regex-based keyword extraction in `src/nlp.rs`.
-- **Config**: Loads `.env` at startup.
 
 ## Critical Workflows
 

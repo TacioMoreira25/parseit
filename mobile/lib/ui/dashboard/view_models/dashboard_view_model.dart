@@ -39,15 +39,12 @@ class DashboardViewModel extends ChangeNotifier {
   Future<bool> deleteJob(String jobId) async {
     try {
       await _jobRepository.deleteJob(jobId);
-
-      // Remove from local list for instant UI update
       _jobs.removeWhere((job) => job.id == jobId);
       notifyListeners();
       return true;
     } catch (e) {
       debugPrint('Error deleting job: $e');
       _errorMessage = 'Failed to delete job.';
-      // Optionally, set state to error and notify listeners
       return false;
     }
   }
@@ -55,8 +52,6 @@ class DashboardViewModel extends ChangeNotifier {
   Future<bool> updateJobStatus(String jobId, String newStatus) async {
     try {
       await _jobRepository.updateJobStatus(jobId, newStatus);
-
-      // Find and update the job in the local list
       final index = _jobs.indexWhere((job) => job.id == jobId);
       if (index != -1) {
         _jobs[index] = _jobs[index].copyWith(status: newStatus);
@@ -66,6 +61,30 @@ class DashboardViewModel extends ChangeNotifier {
     } catch (e) {
       debugPrint('Error updating job status: $e');
       _errorMessage = 'Failed to update job status.';
+      return false;
+    }
+  }
+
+  /// Updates the core details of a job.
+  Future<bool> updateJobDetails({
+    required String jobId,
+    required String title,
+    String? link,
+    required String description,
+  }) async {
+    try {
+      await _jobRepository.updateJob(
+        jobId: jobId,
+        title: title,
+        link: link,
+        description: description,
+      );
+      // For a complete refresh to get all updated data from server:
+      await fetchJobs();
+      return true;
+    } catch (e) {
+      debugPrint('Error updating job details: $e');
+      _errorMessage = 'Failed to update job details.';
       return false;
     }
   }

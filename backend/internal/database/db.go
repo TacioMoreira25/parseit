@@ -23,8 +23,18 @@ func InitDB() *gorm.DB {
 
 	// Migração Automática (Cria tabelas baseadas nos Models)
 	// Adicione novos models aqui quando criar
-	db.AutoMigrate(&models.Job{})
+		db.AutoMigrate(&models.Job{}, &models.Vocabulary{})
 	
-	log.Println("Banco conectado e migrado com sucesso!")
-	return db
-}
+		log.Println("Banco conectado e migrado com sucesso!")
+		return db
+	}
+	
+	// GetVocabularyByTerms retrieves a list of vocabulary entries by their terms.
+	func GetVocabularyByTerms(db *gorm.DB, terms []string) ([]models.Vocabulary, error) {
+		var vocabularies []models.Vocabulary
+		if err := db.Where("term IN ?", terms).Find(&vocabularies).Error; err != nil {
+			return nil, err
+		}
+		return vocabularies, nil
+	}
+	

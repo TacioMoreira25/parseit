@@ -29,21 +29,45 @@ class ApiService {
     }
   }
 
-  /// Deletes a job by its ID.
   Future<void> deleteJob(String jobId) async {
     try {
-      // The endpoint for DELETE is usually /jobs/{id}
       await _dio.delete('/jobs/$jobId');
     } on DioException {
       rethrow;
     }
   }
 
-  /// Updates the status of a job.
   Future<void> updateStatus(String jobId, String newStatus) async {
     try {
-      // The endpoint for PATCH is usually /jobs/{id}
-      await _dio.patch('/jobs/$jobId', data: {'status': newStatus});
+      await _dio.patch('/jobs/$jobId/status', data: {'status': newStatus});
+    } on DioException {
+      rethrow;
+    }
+  }
+
+  Future<void> updateJob(String jobId, Map<String, dynamic> data) async {
+    try {
+      await _dio.patch('/jobs/$jobId', data: data);
+    } on DioException {
+      rethrow;
+    }
+  }
+
+  /// Looks up vocabulary for a list of tags.
+  Future<List<dynamic>> lookupVocabulary(List<String> tags) async {
+    try {
+      final response = await _dio.post(
+        '/vocabulary/lookup',
+        data: {'tags': tags},
+      );
+      if (response.statusCode == 200 && response.data is List) {
+        return response.data as List;
+      } else {
+        throw DioException(
+          requestOptions: response.requestOptions,
+          error: 'Failed to lookup vocabulary',
+        );
+      }
     } on DioException {
       rethrow;
     }
