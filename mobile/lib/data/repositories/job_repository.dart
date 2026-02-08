@@ -46,20 +46,22 @@ class JobRepository {
     await _apiService.updateJob(jobId, data);
   }
 
-  /// Looks up vocabulary for a list of tags.
+  //// Looks up vocabulary for a list of tags.
   Future<List<VocabularyTerm>> lookupVocabulary(List<String> tags) async {
-    // CORREÇÃO: Adicionada uma verificação para não chamar a API com uma lista vazia.
+    // Se não tiver tags, nem chama a API (economiza dados)
     if (tags.isEmpty) {
-      return []; // Retorna uma lista vazia imediatamente.
+      return [];
     }
 
     try {
       final List<dynamic> data = await _apiService.lookupVocabulary(tags);
+
       return data
           .map((json) => VocabularyTerm.fromJson(json as Map<String, dynamic>))
           .toList();
     } catch (e) {
-      // O ViewModel será responsável por lidar com este erro.
+      // Log para você ver no console do Flutter
+      print("Erro no Repository: $e");
       rethrow;
     }
   }

@@ -6,6 +6,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/tacio/parseit-backend/internal/database"
 	"gorm.io/gorm"
+	"strings"
 )
 
 // VocabularyHandler holds the database connection.
@@ -20,23 +21,40 @@ type lookupRequest struct {
 
 // LookupTerms handles the POST request to fetch vocabulary details.
 func (h *VocabularyHandler) LookupTerms(c *gin.Context) {
-	var requestBody lookupRequest
+    var requestBody lookupRequest
 
-	if err := c.ShouldBindJSON(&requestBody); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request body"})
-		return
-	}
+    // 1. Tenta ler o JSON
+    if err := c.ShouldBindJSON(&requestBody); err != nil {
+        c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid JSON format"})
+        return
+    }
 
-	if len(requestBody.Terms) == 0 {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Terms list cannot be empty"})
-		return
-	}
+    // 2. FILTRO INTELIGENTE (A Novidade)
+    var validTerms []string
+    for _, term := range requestBody.Terms {
+        // Remove espaços antes e depois (ex: "  rust  " vira "rust")
+        cleanTerm := strings.TrimSpace(term)
+        
+        // Só adiciona se não for vazio
+        if cleanTerm != "" {
+            validTerms = append(validTerms, strings.ToLower(cleanTerm))
+        }
+    }
 
-	vocabularies, err := database.GetVocabularyByTerms(h.DB, requestBody.Terms)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve vocabulary from database"})
-		return
-	}
+    // 3. Bloqueio: Se depois da limpeza não sobrou nada...
+    if len(validTerms) == 0 {
+        c.JSON(http.StatusBadRequest, gin.H{
+            "error": "Nenhum termo válido encontrado. Envie pelo menos uma palavra (não vazia).",
+        })
+        return
+    }
 
-	c.JSON(http.StatusOK, vocabularies)
+    // 4. Agora sim, busca no banco só o que presta
+    vocabulary, err := database.GetVocabularyByTerms(h.DB, validTerms)
+    if err != nil {
+        c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve vocabulary"})
+        return
+    }
+
+    c.JSON(http.StatusOK, vocabulary)
 }

@@ -9,3 +9,7 @@ pub fn get_redis_url() -> String {
 pub fn get_database_url() -> String {
     env::var("DATABASE_URL").expect("Erro: DATABASE_URL não definido no .env")
 }
+
+pub fn get_groq_api_key() -> String {
+    env::var("GROQ_API_KEY").expect("Erro: GROQ_API_KEY não definido no .env")
+}

@@ -59,7 +59,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 println!("Tags geradas: {}", tags_string);
 
                 // B. Persistência (IO Bound) - Salva no Banco
-                let result = sqlx::query("UPDATE jobs SET tags =  WHERE id = $2")
+                let result = sqlx::query("UPDATE jobs SET tags = $1 WHERE id = $2")
                     .bind(&tags_string)
                     .bind(job.id as i64) // Cast seguro para garantir compatibilidade
                     .execute(&db_pool)

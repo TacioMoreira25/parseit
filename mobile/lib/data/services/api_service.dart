@@ -1,7 +1,6 @@
 import 'package:dio/dio.dart';
 import '../../config/dio_client.dart';
 
-/// A service class for handling API requests.
 class ApiService {
   final Dio _dio = DioClient.instance;
 
@@ -58,17 +57,29 @@ class ApiService {
     try {
       final response = await _dio.post(
         '/vocabulary/lookup',
-        data: {'tags': tags},
+        data: {"terms": tags},
+        // ---------------------
+        options: Options(contentType: Headers.jsonContentType),
       );
-      if (response.statusCode == 200 && response.data is List) {
-        return response.data as List;
+
+      // Verifica se deu certo e se o dado retornado é uma Lista
+      if (response.statusCode == 200) {
+        // O backend pode retornar null se não achar nada, ou lista vazia.
+        // É seguro garantir que é uma lista.
+        if (response.data is List) {
+          return response.data as List;
+        }
+        return []; // Se vier algo estranho, retorna vazio para não quebrar
       } else {
         throw DioException(
           requestOptions: response.requestOptions,
-          error: 'Failed to lookup vocabulary',
+          response: response,
+          error: 'Failed to lookup vocabulary: ${response.statusCode}',
         );
       }
-    } on DioException {
+    } on DioException catch (e) {
+      // Dica: Log o erro para facilitar o debug
+      print("Erro na API: ${e.response?.data}");
       rethrow;
     }
   }

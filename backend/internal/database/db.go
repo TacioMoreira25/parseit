@@ -31,10 +31,10 @@ func InitDB() *gorm.DB {
 	
 	// GetVocabularyByTerms retrieves a list of vocabulary entries by their terms.
 	func GetVocabularyByTerms(db *gorm.DB, terms []string) ([]models.Vocabulary, error) {
-		var vocabularies []models.Vocabulary
-		if err := db.Where("term IN ?", terms).Find(&vocabularies).Error; err != nil {
+		var vocabulary []models.Vocabulary
+		if err := db.Where("term IN ?", terms).Find(&vocabulary).Error; err != nil {
 			return nil, err
 		}
-		return vocabularies, nil
+		return vocabulary, nil
 	}
 	
