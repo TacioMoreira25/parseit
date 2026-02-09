@@ -1,114 +1,103 @@
 package repository
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-}	return nil	}		return fmt.Errorf("failed to commit transaction: %w", err)	if err := tx.Commit(); err != nil {	}		}			return fmt.Errorf("failed to update block order for id %s: %w", blockID, err)		if err != nil {		_, err := tx.Exec(query, i, time.Now(), blockID, cvID)	for i, blockID := range blockIDs {	query := `UPDATE cv_blocks SET position = $1, updated_at = $2 WHERE id = $3 AND cv_id = $4`	defer tx.Rollback()	}		return err	if err != nil {	tx, err := r.DB.Beginx()func (r *CVRepository) UpdateBlockOrder(cvID string, blockIDs []string) error {// UpdateBlockOrder atualiza a ordem dos blocos}	return &cv, nil	cv.Blocks = blocks	}		return nil, fmt.Errorf("failed to get blocks: %w", err)	if err != nil {	err = r.DB.Select(&blocks, queryBlocks, cvID)	queryBlocks := `SELECT * FROM cv_blocks WHERE cv_id = $1 ORDER BY position ASC`	var blocks []models.CVBlock	}		return nil, fmt.Errorf("failed to get cv: %w", err)	if err != nil {	err := r.DB.Get(&cv, queryCV, cvID)	queryCV := `SELECT * FROM cvs WHERE id = $1`	var cv models.CVfunc (r *CVRepository) GetCV(cvID string) (*models.CV, error) {// GetCV retorna o currículo com seus blocos}	return block, nil	}		return nil, fmt.Errorf("failed to add block: %w", err)	if err != nil {	_, err = r.DB.NamedExec(query, block)			  VALUES (:id, :cv_id, :type, :position, :content, :created_at, :updated_at)`	query := `INSERT INTO cv_blocks (id, cv_id, type, position, content, created_at, updated_at) 	}		UpdatedAt: time.Now(),		CreatedAt: time.Now(),		Content:   json.RawMessage(contentBytes),		Position:  position,		Type:      blockType,		CVID:      cvID,		ID:        uuid.New().String(),	block := &models.CVBlock{	}		return nil, fmt.Errorf("failed to marshal content: %w", err)	if err != nil {	contentBytes, err := json.Marshal(content)func (r *CVRepository) AddBlock(cvID, blockType string, content interface{}, position int) (*models.CVBlock, error) {// AddBlock adiciona um novo bloco ao currículo}	return cv, nil	}		return nil, fmt.Errorf("failed to create cv: %w", err)	if err != nil {	_, err := r.DB.NamedExec(query, cv)			  VALUES (:id, :user_id, :title, :created_at, :updated_at)`	query := `INSERT INTO cvs (id, user_id, title, created_at, updated_at) 	}		UpdatedAt: time.Now(),		CreatedAt: time.Now(),		Title:     title,		UserID:    userID,		ID:        uuid.New().String(),	cv := &models.CV{func (r *CVRepository) CreateCV(userID, title string) (*models.CV, error) {// CreateCV cria um novo currículo}	return &CVRepository{DB: db}func NewCVRepository(db *sqlx.DB) *CVRepository {}	DB *sqlx.DBtype CVRepository struct {)	"github.com/tacio/parseit-backend/internal/models"	"github.com/jmoiron/sqlx"	"github.com/google/uuid"	"time"	"fmt"	"encoding/json"import (package repository
+import (
+	"encoding/json"
+	"fmt"
+	"time"
+
+	"github.com/google/uuid"
+	"github.com/jmoiron/sqlx"
+	"github.com/tacio/parseit-backend/internal/models"
+)
+
+type CVRepository struct {
+	DB *sqlx.DB
+}
+
+func NewCVRepository(db *sqlx.DB) *CVRepository {
+	return &CVRepository{DB: db}
+}
+
+func (r *CVRepository) CreateCV(userID, title string) (*models.CV, error) {
+	cv := &models.CV{
+		ID:        uuid.New().String(),
+		UserID:    userID,
+		Title:     title,
+		CreatedAt: time.Now(),
+		UpdatedAt: time.Now(),
+	}
+
+	query := `INSERT INTO cvs (id, user_id, title, created_at, updated_at) 
+			  VALUES (:id, :user_id, :title, :created_at, :updated_at)`
+
+	_, err := r.DB.NamedExec(query, cv)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create cv: %w", err)
+	}
+
+	return cv, nil
+}
+
+func (r *CVRepository) AddBlock(cvID, blockType string, content interface{}, position int) (*models.CVBlock, error) {
+	contentBytes, err := json.Marshal(content)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal content: %w", err)
+	}
+
+	block := &models.CVBlock{
+		ID:        uuid.New().String(),
+		CVID:      cvID,
+		Type:      blockType,
+		Position:  position,
+		Content:   json.RawMessage(contentBytes),
+		CreatedAt: time.Now(),
+		UpdatedAt: time.Now(),
+	}
+
+	query := `INSERT INTO cv_blocks (id, cv_id, type, position, content, created_at, updated_at) 
+			  VALUES (:id, :cv_id, :type, :position, :content, :created_at, :updated_at)`
+
+	_, err = r.DB.NamedExec(query, block)
+	if err != nil {
+		return nil, fmt.Errorf("failed to add block: %w", err)
+	}
+
+	return block, nil
+}
+
+func (r *CVRepository) GetCV(cvID string) (*models.CV, error) {
+	var cv models.CV
+	// Busca o CV
+	if err := r.DB.Get(&cv, "SELECT * FROM cvs WHERE id = $1", cvID); err != nil {
+		return nil, err
+	}
+
+	// Busca os Blocos ordenados
+	var blocks []models.CVBlock
+	err := r.DB.Select(&blocks, "SELECT * FROM cv_blocks WHERE cv_id = $1 ORDER BY position ASC", cvID)
+	if err != nil {
+		return nil, err
+	}
+
+	cv.Blocks = blocks
+	return &cv, nil
+}
+
+func (r *CVRepository) UpdateBlockOrder(cvID string, blockIDs []string) error {
+	tx, err := r.DB.Beginx()
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+
+	query := `UPDATE cv_blocks SET position = $1, updated_at = $2 WHERE id = $3 AND cv_id = $4`
+
+	for i, blockID := range blockIDs {
+		// i serve como a nova posição (0-based)
+		if _, err := tx.Exec(query, i, time.Now(), blockID, cvID); err != nil {
+			return fmt.Errorf("erro atualizando ordem bloco %s: %w", blockID, err)
+		}
+	}
+
+	return tx.Commit()
+}

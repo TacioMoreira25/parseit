@@ -26,6 +26,8 @@ This represents a distributed system with a Go backend API and a Rust background
   - `internal/handlers`: HTTP handlers (Gin). Inject DB/Redis dependencies via struct.
   - `internal/models`: GORM structs.
   - `internal/queue`: Redis setup.
+  - `internal/repository`: Data access layer (SQLx) for CVs.
+  - `internal/services`: Business logic (e.g., PDF generation with Maroto).
 - **Dependency Injection**: Use struct-based injection for Handlers.
   ```go
   type JobHandler struct {
@@ -42,6 +44,13 @@ This represents a distributed system with a Go backend API and a Rust background
 - `DELETE /api/v1/jobs/:id`: Delete a job.
 - `PATCH /api/v1/jobs/:id`: Update a job's title, description, or link.
 - `PATCH /api/v1/jobs/:id/status`: Update a job's status.
+
+### CV Builder (Resume)
+- `POST /api/v1/cvs`: Create a new CV.
+- `GET /api/v1/cvs/:id`: Get a CV with all blocks.
+- `POST /api/v1/cvs/:id/blocks`: Add a block to a CV.
+- `PUT /api/v1/cvs/:id/order`: Update block order.
+- `GET /api/v1/cvs/:id/pdf`: Generate and download PDF.
 
 ### Worker (Rust)
 - **Async Runtime**: Tokio.
@@ -69,5 +78,7 @@ This represents a distributed system with a Go backend API and a Rust background
 
 ## Directory Map
 - `backend/internal/handlers`: Core API logic.
+- `backend/internal/repository`: Data access logic (CVs).
+- `backend/internal/services`: Business logic (PDF Generation).
 - `worker/src/nlp.rs`: Keyword extraction logic.
 - `mobile`: (Currently empty/placeholder).

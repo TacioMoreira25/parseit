@@ -4,6 +4,7 @@ import (
 	"log"
 	"os"
 
+	"github.com/jmoiron/sqlx"
 	"github.com/tacio/parseit-backend/internal/models"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
@@ -22,18 +23,26 @@ func InitDB() *gorm.DB {
 	}
 
 	// Migração Automática (Cria tabelas baseadas nos Models)
-		db.AutoMigrate(&models.Job{}, &models.Vocabulary{})
-	
-		log.Println("Banco conectado e migrado com sucesso!")
-		return db
+	db.AutoMigrate(&models.Job{}, &models.Vocabulary{}, &models.CV{}, &models.CVBlock{})
+
+	log.Println("Banco conectado e migrado com sucesso!")
+	return db
+}
+
+// GetSQLXDB retorna uma conexão *sqlx.DB a partir do *gorm.DB
+func GetSQLXDB(db *gorm.DB) *sqlx.DB {
+	sqlDB, err := db.DB()
+	if err != nil {
+		log.Fatal("Erro ao obter sql.DB do GORM:", err)
 	}
-	
-	// GetVocabularyByTerms retrieves a list of vocabulary entries by their terms.
-	func GetVocabularyByTerms(db *gorm.DB, terms []string) ([]models.Vocabulary, error) {
-		var vocabulary []models.Vocabulary
-		if err := db.Where("term IN ?", terms).Find(&vocabulary).Error; err != nil {
-			return nil, err
-		}
-		return vocabulary, nil
+	return sqlx.NewDb(sqlDB, "postgres")
+}
+
+// GetVocabularyByTerms retrieves a list of vocabulary entries by their terms.
+func GetVocabularyByTerms(db *gorm.DB, terms []string) ([]models.Vocabulary, error) {
+	var vocabulary []models.Vocabulary
+	if err := db.Where("term IN ?", terms).Find(&vocabulary).Error; err != nil {
+		return nil, err
 	}
-	
+	return vocabulary, nil
+}
