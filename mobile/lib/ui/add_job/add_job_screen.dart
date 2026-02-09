@@ -106,12 +106,7 @@ class AddJobScreen extends StatelessWidget {
                     if (!context.mounted) return;
 
                     if (success) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('Vaga enviada para o Worker!'),
-                          backgroundColor: Color(0xFF00695C),
-                        ),
-                      );
+                      Navigator.pop(context, true);
                     } else {
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(

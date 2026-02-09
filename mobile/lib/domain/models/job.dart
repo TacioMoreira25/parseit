@@ -11,7 +11,7 @@ class Job {
   final int salary;
   final String location;
   final DateTime createdAt;
-  final String status; // Added status field
+  final String status;
 
   const Job({
     required this.id,

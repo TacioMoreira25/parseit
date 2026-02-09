@@ -7,7 +7,6 @@ class DioClient {
   DioClient._();
 
   static String _getBaseUrl() {
-    // A ordem importa. kIsWeb precisa vir primeiro.
     if (kIsWeb) {
       return 'http://localhost:8080/api/v1';
     }
@@ -15,16 +14,13 @@ class DioClient {
       // Usa o IP especial para o Emulador Android.
       return 'http://10.0.2.2:8080/api/v1';
     }
-    // Para todas as outras plataformas (Desktop Linux, Windows, macOS, iOS Simulator)
-    // o localhost funciona.
     return 'http://localhost:8080/api/v1';
   }
 
   static final Dio _dio =
       Dio(
           BaseOptions(
-            baseUrl:
-                _getBaseUrl(), // Usa a função dinâmica para definir a URL base
+            baseUrl: _getBaseUrl(),
             connectTimeout: const Duration(seconds: 15),
             receiveTimeout: const Duration(seconds: 10),
           ),

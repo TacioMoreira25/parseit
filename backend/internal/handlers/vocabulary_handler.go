@@ -23,13 +23,11 @@ type lookupRequest struct {
 func (h *VocabularyHandler) LookupTerms(c *gin.Context) {
     var requestBody lookupRequest
 
-    // 1. Tenta ler o JSON
     if err := c.ShouldBindJSON(&requestBody); err != nil {
         c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid JSON format"})
         return
     }
 
-    // 2. FILTRO INTELIGENTE (A Novidade)
     var validTerms []string
     for _, term := range requestBody.Terms {
         // Remove espaços antes e depois (ex: "  rust  " vira "rust")
@@ -41,7 +39,6 @@ func (h *VocabularyHandler) LookupTerms(c *gin.Context) {
         }
     }
 
-    // 3. Bloqueio: Se depois da limpeza não sobrou nada...
     if len(validTerms) == 0 {
         c.JSON(http.StatusBadRequest, gin.H{
             "error": "Nenhum termo válido encontrado. Envie pelo menos uma palavra (não vazia).",
@@ -49,7 +46,6 @@ func (h *VocabularyHandler) LookupTerms(c *gin.Context) {
         return
     }
 
-    // 4. Agora sim, busca no banco só o que presta
     vocabulary, err := database.GetVocabularyByTerms(h.DB, validTerms)
     if err != nil {
         c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve vocabulary"})

@@ -1,13 +1,12 @@
-use serde::Deserialize;
-use sqlx::FromRow;
+use serde::{Deserialize, Serialize};
 
-#[derive(Deserialize, Debug)]
-pub struct JobEvent {
-    pub id: u32,
+#[derive(Debug, Deserialize, Serialize, Clone)]
+pub struct Job {
+    pub id: i64,
     pub description: String,
 }
 
-#[derive(FromRow, Debug, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Vocabulary {
     pub term: String,
     pub definition_en: String,

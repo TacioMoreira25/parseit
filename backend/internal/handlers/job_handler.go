@@ -1,27 +1,29 @@
 package handlers
 
 import (
+	"context"
 	"encoding/json"
 	"net/http"
+	"time"
+
+	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/redis/go-redis/v9"
 	"github.com/tacio/parseit-backend/internal/models"
 	"github.com/tacio/parseit-backend/internal/queue"
 	"gorm.io/gorm"
-	"strings"
 )
 
-// JobHandler segura a conexão do banco para usar nas rotas
-type JobHandler struct {
-	DB *gorm.DB
+ type JobHandler struct {
+	DB    *gorm.DB
 	Redis *redis.Client
 }
 
 // CreateJob recebe o JSON e salva
 func (h *JobHandler) CreateJob(c *gin.Context) {
 	var job models.Job
-	
+
 	if err := c.ShouldBindJSON(&job); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
@@ -34,17 +36,51 @@ func (h *JobHandler) CreateJob(c *gin.Context) {
 	}
 
 	msg := map[string]interface{}{
-		"id": job.ID,
+		"id":          job.ID,
 		"description": job.Description,
 	}
 
 	msgBytes, _ := json.Marshal(msg)
 
+	pubsub := h.Redis.Subscribe(queue.Ctx, "job_completed")
+	defer pubsub.Close()
+
+	if _, err := pubsub.Receive(queue.Ctx); err != nil {
+		c.JSON(http.StatusCreated, job)
+		return
+	}
+
 	err := h.Redis.Publish(queue.Ctx, "job_created", msgBytes).Err()
 	if err != nil {
-		c.JSON(http.StatusCreated, gin.H{"job": job, "warning": "Falha ao enviar para análise"})		
+		c.JSON(http.StatusCreated, gin.H{"job": job, "warning": "Falha ao enviar para análise"})
 		return
-	}	
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	defer cancel()
+
+	tagsGenerated := false
+
+	ch := pubsub.Channel()
+	for {
+		select {
+		case msg := <-ch:
+			var event map[string]interface{}
+			if err := json.Unmarshal([]byte(msg.Payload), &event); err == nil {
+				if id, ok := event["id"].(float64); ok && uint(id) == job.ID {
+					tagsGenerated = true
+					goto Done
+				}
+			}
+		case <-ctx.Done():
+			goto Done
+		}
+	}
+
+Done:
+	if tagsGenerated {
+		h.DB.First(&job, job.ID)
+	}
 
 	c.JSON(http.StatusCreated, job)
 }

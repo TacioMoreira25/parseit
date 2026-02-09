@@ -55,17 +55,11 @@ class DashboardScreen extends StatelessWidget {
         },
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          // Navigate to the AddJobScreen, which is the second tab (index 1)
-          // This is a placeholder navigation. For a more robust solution,
-          // consider a shared state for tab management if not already in place.
-          // For now, this assumes a simple tab switch logic might be handled by MainWrapper.
-          // A better way is to push a new route if it's not tab-based.
-          // Let's create a new route for adding jobs.
-          context.push('/add_job').then((_) {
-            // After returning from the add job screen, refresh the list.
+        onPressed: () async {
+          final result = await context.push<bool>('/add_job');
+          if (result == true) {
             viewModel.fetchJobs();
-          });
+          }
         },
         backgroundColor: const Color(0xFF1A1A1A),
         child: const Icon(CupertinoIcons.add, color: Colors.white),

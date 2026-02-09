@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-
 import 'data/repositories/job_repository.dart';
 import 'data/services/api_service.dart';
 import 'routing/app_router.dart';
@@ -24,11 +23,8 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
-        // CORREÇÃO: Fornece o JobRepository para todo o aplicativo.
-        // Qualquer widget filho agora pode acessá-lo com context.read<JobRepository>().
         Provider<JobRepository>.value(value: jobRepository),
 
-        // Seus outros providers que dependem do repositório.
         ChangeNotifierProvider(
           create: (_) => DashboardViewModel(jobRepository),
         ),

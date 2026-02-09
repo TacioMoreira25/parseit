@@ -1,6 +1,6 @@
 import 'package:go_router/go_router.dart';
 import 'package:mobile/ui/add_job/add_job_screen.dart';
-import 'package:mobile/ui/edit_job/edit_job_screen.dart'; // Import the new screen
+import 'package:mobile/ui/edit_job/edit_job_screen.dart';
 import 'package:mobile/ui/main_wrapper.dart';
 import '../domain/models/job.dart';
 import '../ui/job_details/job_details_screen.dart';

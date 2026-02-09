@@ -15,7 +15,6 @@ class JobDetailsScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Cria o ViewModel passando o repositório e as tags da vaga
     return ChangeNotifierProvider(
       create: (context) =>
           JobDetailsViewModel(context.read<JobRepository>(), job.tags),
@@ -69,7 +68,6 @@ class JobDetailsScreen extends StatelessWidget {
       );
     }
 
-    // Usamos Stack para colocar as setas de navegação "flutuando" sobre o PageView
     return Stack(
       children: [
         PageView.builder(
@@ -129,20 +127,14 @@ class JobDetailsScreen extends StatelessWidget {
 class _Flashcard extends StatelessWidget {
   final VocabularyTerm term;
 
-  // Usamos um GlobalKey para o FlipCard se quisermos resetar o estado via código,
-  // mas aqui o PageView rebuilda o widget, então ele volta para o "front" naturalmente.
   const _Flashcard({required this.term});
 
   @override
   Widget build(BuildContext context) {
-    // Acessamos o viewModel apenas para usar o método speak
     final viewModel = context.read<JobDetailsViewModel>();
 
     return Padding(
-      padding: const EdgeInsets.symmetric(
-        vertical: 40.0,
-        horizontal: 48.0,
-      ), // Aumentei margem lateral para dar espaço às setas web
+      padding: const EdgeInsets.symmetric(vertical: 40.0, horizontal: 48.0),
       child: FlipCard(
         direction: FlipDirection.HORIZONTAL,
         front: _buildCardSide(
@@ -154,35 +146,26 @@ class _Flashcard extends StatelessWidget {
                 term.term.toUpperCase(),
                 textAlign: TextAlign.center,
                 style: GoogleFonts.inter(
-                  fontSize: 48,
-                  fontWeight: FontWeight.bold,
+                  fontSize: 42,
+                  fontWeight: FontWeight.w800,
                   color: const Color(0xFF00695C),
                 ),
               ),
-              if (term.phonetic.isNotEmpty) ...[
-                const SizedBox(height: 8),
-                Text(
-                  term.phonetic,
-                  style: GoogleFonts.inter(
-                    fontSize: 18,
-                    color: Colors.grey[600],
-                  ),
-                ),
-              ],
+
               const SizedBox(height: 40),
-              // Botão de Áudio Principal
+
               IconButton(
+                iconSize: 64,
                 icon: const Icon(
                   CupertinoIcons.speaker_2_fill,
-                  size: 40,
                   color: Colors.black54,
                 ),
                 onPressed: () => viewModel.speak(term.term),
               ),
-              const SizedBox(height: 10),
+              const SizedBox(height: 20),
               Text(
                 "Toque para ver o significado",
-                style: GoogleFonts.inter(fontSize: 12, color: Colors.grey[400]),
+                style: GoogleFonts.inter(fontSize: 14, color: Colors.grey[400]),
               ),
             ],
           ),
@@ -190,7 +173,7 @@ class _Flashcard extends StatelessWidget {
         back: _buildCardSide(
           context,
           child: SingleChildScrollView(
-            padding: const EdgeInsets.all(20),
+            padding: const EdgeInsets.all(24),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -200,78 +183,93 @@ class _Flashcard extends StatelessWidget {
                     Text(
                       term.term,
                       style: GoogleFonts.inter(
-                        fontSize: 22,
+                        fontSize: 24,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
-                    Chip(
-                      label: Text(
-                        term.grammarType,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 12,
-                        ),
-                      ),
-                      backgroundColor: const Color(0xFF00695C),
-                      padding: EdgeInsets.zero,
-                    ),
+                    const Icon(Icons.translate, color: Colors.grey, size: 20),
                   ],
                 ),
-                const Divider(height: 24),
+                const Divider(height: 32),
+
                 Text(
                   term.definitionEn,
                   style: GoogleFonts.inter(
-                    fontSize: 16,
-                    fontStyle: FontStyle.italic,
+                    fontSize: 18,
+                    height: 1.4,
                     color: Colors.black87,
                   ),
                 ),
-                const SizedBox(height: 12),
+
+                const SizedBox(height: 16),
+
                 Text(
                   term.translationPt,
                   style: GoogleFonts.inter(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                    fontStyle: FontStyle.italic,
                     color: const Color(0xFF00695C),
                   ),
                 ),
+
                 if (term.exampleSentenceEn.isNotEmpty) ...[
-                  const SizedBox(height: 24),
+                  const SizedBox(height: 32),
                   Container(
-                    padding: const EdgeInsets.all(12),
+                    padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      color: Colors.grey[100],
-                      borderRadius: BorderRadius.circular(8),
+                      color: const Color(0xFFF0F4F4),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: const Color(0xFFE0E0E0)),
                     ),
-                    child: Row(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                term.exampleSentenceEn,
-                                style: GoogleFonts.inter(
-                                  color: Colors.grey[800],
-                                  fontWeight: FontWeight.w500,
-                                ),
+                        Row(
+                          children: [
+                            const Icon(
+                              Icons.format_quote_rounded,
+                              color: Colors.grey,
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              "Exemplo",
+                              style: GoogleFonts.inter(
+                                fontSize: 12,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.grey[600],
                               ),
-                              if (term.exampleSentencePt.isNotEmpty)
-                                Text(
-                                  term.exampleSentencePt,
-                                  style: GoogleFonts.inter(
-                                    color: Colors.grey[600],
-                                    fontSize: 12,
-                                  ),
-                                ),
-                            ],
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          term.exampleSentenceEn,
+                          style: GoogleFonts.inter(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w500,
+                            color: Colors.black87,
                           ),
                         ),
-                        // Botão de Áudio da Frase
-                        IconButton(
-                          icon: const Icon(CupertinoIcons.speaker_1, size: 24),
-                          onPressed: () =>
-                              viewModel.speak(term.exampleSentenceEn),
+                        if (term.exampleSentencePt.isNotEmpty) ...[
+                          const SizedBox(height: 8),
+                          Text(
+                            term.exampleSentencePt,
+                            style: GoogleFonts.inter(
+                              fontSize: 14,
+                              color: Colors.grey[600],
+                            ),
+                          ),
+                        ],
+                        Align(
+                          alignment: Alignment.centerRight,
+                          child: IconButton(
+                            icon: const Icon(
+                              CupertinoIcons.speaker_1,
+                              size: 20,
+                            ),
+                            onPressed: () =>
+                                viewModel.speak(term.exampleSentenceEn),
+                          ),
                         ),
                       ],
                     ),
@@ -287,13 +285,13 @@ class _Flashcard extends StatelessWidget {
 
   Widget _buildCardSide(BuildContext context, {required Widget child}) {
     return Card(
-      elevation: 4.0, // Reduzi um pouco a elevação para ficar mais "clean"
+      elevation: 4.0,
       shadowColor: Colors.black.withOpacity(0.1),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20.0)),
       color: Colors.white,
       child: Container(
         width: double.infinity,
-        height: double.infinity, // Ocupa toda a altura do container do PageView
+        height: double.infinity,
         alignment: Alignment.center,
         child: child,
       ),

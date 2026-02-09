@@ -48,7 +48,6 @@ class JobRepository {
 
   //// Looks up vocabulary for a list of tags.
   Future<List<VocabularyTerm>> lookupVocabulary(List<String> tags) async {
-    // Se não tiver tags, nem chama a API (economiza dados)
     if (tags.isEmpty) {
       return [];
     }
@@ -60,7 +59,6 @@ class JobRepository {
           .map((json) => VocabularyTerm.fromJson(json as Map<String, dynamic>))
           .toList();
     } catch (e) {
-      // Log para você ver no console do Flutter
       print("Erro no Repository: $e");
       rethrow;
     }

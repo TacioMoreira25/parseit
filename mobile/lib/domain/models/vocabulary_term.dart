@@ -19,12 +19,11 @@ class VocabularyTerm {
 
   factory VocabularyTerm.fromJson(Map<String, dynamic> json) {
     return VocabularyTerm(
-      // Mapeando as chaves exatas que vêm do Backend Go (Snake Case)
       term: json['term'] ?? '',
       definitionEn: json['definition_en'] ?? 'Definição indisponível',
       translationPt: json['translation_pt'] ?? 'Tradução indisponível',
       phonetic: json['phonetic_ipa'] ?? '',
-      grammarType: json['grammatical_category'] ?? 'Substantivo',
+      grammarType: json['grammatical_category'] ?? '',
       exampleSentenceEn: json['example_sentence_en'] ?? '',
       exampleSentencePt: json['example_sentence_pt'] ?? '',
     );

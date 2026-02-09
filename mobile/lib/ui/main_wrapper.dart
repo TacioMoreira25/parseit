@@ -2,7 +2,6 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
-
 import 'cvs/cv_list_screen.dart';
 import 'dashboard/dashboard_screen.dart';
 import 'dashboard/view_models/dashboard_view_model.dart';
@@ -33,7 +32,6 @@ class _MainWrapperState extends State<MainWrapper> {
       body: IndexedStack(index: _currentIndex, children: _screens),
       floatingActionButton: _currentIndex == 0
           ? FloatingActionButton(
-              // CORREÇÃO: Adicionada uma tag única para o Hero.
               heroTag: 'add_job_fab',
               onPressed: () {
                 context.push('/add_job').then((_) {

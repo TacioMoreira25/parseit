@@ -62,14 +62,11 @@ class ApiService {
         options: Options(contentType: Headers.jsonContentType),
       );
 
-      // Verifica se deu certo e se o dado retornado é uma Lista
       if (response.statusCode == 200) {
-        // O backend pode retornar null se não achar nada, ou lista vazia.
-        // É seguro garantir que é uma lista.
         if (response.data is List) {
           return response.data as List;
         }
-        return []; // Se vier algo estranho, retorna vazio para não quebrar
+        return [];
       } else {
         throw DioException(
           requestOptions: response.requestOptions,
@@ -78,7 +75,6 @@ class ApiService {
         );
       }
     } on DioException catch (e) {
-      // Dica: Log o erro para facilitar o debug
       print("Erro na API: ${e.response?.data}");
       rethrow;
     }
