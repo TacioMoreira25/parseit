@@ -1,8 +1,8 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:mobile/ui/cvs/cv_list_screen.dart';
 import 'package:provider/provider.dart';
-import 'cvs/cv_list_screen.dart';
 import 'dashboard/dashboard_screen.dart';
 import 'dashboard/view_models/dashboard_view_model.dart';
 
@@ -16,7 +16,7 @@ class MainWrapper extends StatefulWidget {
 class _MainWrapperState extends State<MainWrapper> {
   int _currentIndex = 0;
 
-  final List<Widget> _screens = [const DashboardScreen(), const CVListScreen()];
+  final List<Widget> _screens = [const DashboardScreen(), const CvListScreen()];
 
   void _onTabTapped(int index) {
     setState(() {

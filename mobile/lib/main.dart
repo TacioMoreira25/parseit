@@ -1,13 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-
 import 'data/repositories/cv_repository.dart';
 import 'data/repositories/job_repository.dart';
 import 'data/services/api_service.dart';
 import 'routing/app_router.dart';
 import 'ui/add_job/view_models/add_job_view_model.dart';
 import 'ui/core/themes/app_theme.dart';
-import 'ui/edit_cv/view_models/edit_cv_viewmodel.dart';
 import 'ui/dashboard/view_models/dashboard_view_model.dart';
 
 void main() {
@@ -34,17 +32,14 @@ class MyApp extends StatelessWidget {
     return MultiProvider(
       providers: [
         // Repositories
-        Provider<JobRepository>.value(value: jobRepository),
-        Provider<CvRepository>.value(value: cvRepository),
+        Provider<JobRepository>(create: (_) => JobRepository(ApiService())),
+        Provider<CvRepository>(create: (_) => CvRepository(ApiService())),
 
-        // ViewModels
+        // Global ViewModels
         ChangeNotifierProvider(
           create: (_) => DashboardViewModel(jobRepository),
         ),
         ChangeNotifierProvider(create: (_) => AddJobViewModel(jobRepository)),
-        ChangeNotifierProvider(
-          create: (context) => EditCvViewModel(context.read<CvRepository>()),
-        ),
       ],
       child: MaterialApp.router(
         title: 'ParseIt',

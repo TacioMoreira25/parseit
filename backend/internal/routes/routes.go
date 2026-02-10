@@ -39,10 +39,17 @@ func SetupRoutes(r *gin.Engine, db *gorm.DB, rdb *redis.Client) {
 		api.POST("/vocabulary/lookup", vocabularyHandler.LookupTerms)
 
 		// CV routes
-		api.POST("/cvs", cvHandler.CreateCV)
-		api.GET("/cvs/:id", cvHandler.GetCV)
-		api.POST("/cvs/:id/blocks", cvHandler.AddBlock)
-		api.PUT("/cvs/:id/order", cvHandler.UpdateOrder)
-		api.GET("/cvs/:id/pdf", cvHandler.GeneratePDF)
+        api.POST("/cvs", cvHandler.CreateCV)
+        api.GET("/cvs", cvHandler.GetCVs)
+        api.GET("/cvs/:id", cvHandler.GetCV)
+        
+        api.POST("/cvs/:id/blocks", cvHandler.AddBlock)
+        
+        api.PATCH("/cvs/:id/blocks/:blockId", cvHandler.UpdateBlock)
+        api.DELETE("/cvs/:id/blocks/:blockId", cvHandler.DeleteBlock)
+        // ---------------------------
+
+        api.POST("/cvs/:id/reorder", cvHandler.ReorderBlocks)
+        api.GET("/cvs/:id/pdf", cvHandler.GeneratePDF)
 	}
 }

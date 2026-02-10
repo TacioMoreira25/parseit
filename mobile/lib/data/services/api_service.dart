@@ -75,19 +75,35 @@ class ApiService {
 
   // --- CV Methods ---
 
+  Future<List<dynamic>> fetchCVs() async {
+    try {
+      final response = await _dio.get('/cvs');
+      if (response.statusCode == 200 && response.data is List) {
+        return response.data as List;
+      }
+      return [];
+    } on DioException {
+      rethrow;
+    }
+  }
+
+  Future<Map<String, dynamic>> createCV(String title) async {
+    try {
+      final response = await _dio.post('/cvs', data: {'title': title});
+      return response.data; // Espera retornar o objeto CV criado com ID
+    } on DioException {
+      rethrow;
+    }
+  }
+
   Future<List<dynamic>> fetchCvBlocks(String cvId) async {
     try {
-      final response = await _dio.get(
-        '/cvs/$cvId',
-      ); // Assuming endpoint returns a CV object with a 'blocks' list
+      final response = await _dio.get('/cvs/$cvId');
+      // O backend deve retornar o objeto CV com uma chave 'blocks'
       if (response.statusCode == 200 && response.data['blocks'] is List) {
         return response.data['blocks'] as List;
-      } else {
-        throw DioException(
-          requestOptions: response.requestOptions,
-          error: 'Failed to load CV blocks',
-        );
       }
+      return [];
     } on DioException {
       rethrow;
     }
@@ -97,7 +113,7 @@ class ApiService {
     try {
       await _dio.post(
         '/cvs/$cvId/blocks',
-        data: {'type': block.type, 'content': block.content},
+        data: block.toJson(), // Usa o toJson que criamos
       );
     } on DioException {
       rethrow;
@@ -106,12 +122,44 @@ class ApiService {
 
   Future<void> updateBlockOrder(String cvId, List<String> blockIds) async {
     try {
-      await _dio.put('/cvs/$cvId/order', data: {'block_ids': blockIds});
+      // Endpoint específico para reordenação em lote
+      await _dio.post('/cvs/$cvId/reorder', data: {'block_ids': blockIds});
     } on DioException {
       rethrow;
     }
   }
 
-  // NOTE: PDF generation is a GET request that should probably be handled
-  // by a URL launcher, so no specific ApiService method for it.
+  Future<void> updateBlock(
+    String cvId,
+    String blockId,
+    Map<String, dynamic> content,
+  ) async {
+    try {
+      // Endpoint: PATCH /cvs/:id/blocks/:blockId
+      await _dio.patch(
+        '/cvs/$cvId/blocks/$blockId',
+        data: {'content': content},
+      );
+    } on DioException {
+      rethrow;
+    }
+  }
+
+  Future<void> deleteBlock(String cvId, String blockId) async {
+    try {
+      // Endpoint: DELETE /cvs/:id/blocks/:blockId
+      await _dio.delete('/cvs/$cvId/blocks/$blockId');
+    } on DioException {
+      rethrow;
+    }
+  }
+
+  Future<void> deleteCV(String cvId) async {
+    try {
+      // Endpoint: DELETE /cvs/:id
+      await _dio.delete('/cvs/$cvId');
+    } on DioException {
+      rethrow;
+    }
+  }
 }

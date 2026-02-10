@@ -2,15 +2,18 @@ import 'package:go_router/go_router.dart';
 import 'package:mobile/ui/add_job/add_job_screen.dart';
 import 'package:mobile/ui/edit_job/edit_job_screen.dart';
 import 'package:mobile/ui/main_wrapper.dart';
-import '../ui/edit_cv/edit_cv_screen.dart';
+import 'package:provider/provider.dart';
+import '../data/repositories/cv_repository.dart';
 import '../domain/models/job.dart';
+import '../ui/cv_editor/cv_editor_screen.dart';
+import '../ui/cv_editor/view_models/cv_editor_viewmodel.dart';
 import '../ui/job_details/job_details_screen.dart';
 
 class AppRouter {
   AppRouter._();
 
   static final GoRouter router = GoRouter(
-    initialLocation: '/edit-cv', // Changed for development
+    initialLocation: '/', // Reverted to original
     routes: [
       GoRoute(
         path: '/',
@@ -31,6 +34,14 @@ class AppRouter {
               }
             },
           ),
+          // The route now accepts a cvId as a parameter
+          GoRoute(
+            path: 'edit-cv/:cvId',
+            builder: (context, state) {
+              final cvId = state.pathParameters['cvId'];
+              return CvEditorScreenProvider(cvId: cvId!);
+            },
+          ),
         ],
       ),
       GoRoute(
@@ -43,11 +54,6 @@ class AppRouter {
             return const MainWrapper();
           }
         },
-      ),
-      // Add the Edit CV route
-      GoRoute(
-        path: '/edit-cv',
-        builder: (context, state) => const EditCvScreen(),
       ),
     ],
     errorBuilder: (context, state) => const MainWrapper(),

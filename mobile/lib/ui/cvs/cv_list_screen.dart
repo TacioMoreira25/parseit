@@ -1,100 +1,120 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
+import '../../data/repositories/cv_repository.dart';
 
-class CVListScreen extends StatelessWidget {
-  const CVListScreen({super.key});
+class CvListScreen extends StatefulWidget {
+  const CvListScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFFF5F5F7),
-      appBar: AppBar(title: const Text('Meus Currículos'), centerTitle: false),
-      body: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16.0),
-        child: Column(
-          children: [
-            _buildDesktopNotice(),
-            Expanded(
-              child: ListView(
-                children: [
-                  _buildCVCard(context, title: 'Dev Go Pleno'),
-                  _buildCVCard(context, title: 'Dev Rust Junior'),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
+  State<CvListScreen> createState() => _CvListScreenState();
+}
+
+class _CvListScreenState extends State<CvListScreen> {
+  // Estado local simples. Em app maior, usaria um ViewModel dedicado.
+  List<Map<String, dynamic>> _cvs = [];
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadCVs();
   }
 
-  Widget _buildDesktopNotice() {
-    return Container(
-      margin: const EdgeInsets.only(top: 8, bottom: 24),
-      padding: const EdgeInsets.all(12.0),
-      decoration: BoxDecoration(
-        color: Colors.blue[50],
-        borderRadius: BorderRadius.circular(10.0),
-        border: Border.all(color: Colors.blue[200]!),
-      ),
-      child: Row(
-        children: [
-          Icon(CupertinoIcons.device_laptop, color: Colors.blue[800]),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Text(
-              'Gerencie e edite seus currículos na versão Desktop.',
-              style: GoogleFonts.inter(
-                color: Colors.blue[800],
-                fontWeight: FontWeight.w500,
-              ),
-            ),
+  Future<void> _loadCVs() async {
+    try {
+      final repo = context.read<CvRepository>();
+      final cvs = await repo.fetchCVs();
+      if (mounted) {
+        setState(() {
+          _cvs = cvs;
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isLoading = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Erro ao carregar currículos: $e')),
+        );
+      }
+    }
+  }
+
+  Future<void> _createNewCV() async {
+    // Diálogo simples para pedir o título
+    final titleController = TextEditingController();
+    final String? title = await showDialog<String>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Novo Currículo'),
+        content: TextField(
+          controller: titleController,
+          decoration: const InputDecoration(hintText: 'Ex: Desenvolvedor Go'),
+          autofocus: true,
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancelar'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, titleController.text),
+            child: const Text('Criar'),
           ),
         ],
       ),
     );
+
+    if (title != null && title.isNotEmpty) {
+      try {
+        final repo = context.read<CvRepository>();
+        final newId = await repo.createCV(title);
+        if (mounted) {
+          // Navega para a edição usando GoRouter
+          context.push('/edit-cv/$newId').then((_) => _loadCVs());
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text('Erro ao criar: $e')));
+        }
+      }
+    }
   }
 
-  Widget _buildCVCard(BuildContext context, {required String title}) {
-    return Card(
-      elevation: 2.0,
-      shadowColor: Colors.black.withOpacity(0.05),
-      margin: const EdgeInsets.only(bottom: 12.0),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.0)),
-      color: Colors.white,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
-        child: Row(
-          children: [
-            const Icon(
-              CupertinoIcons.doc_text_fill,
-              color: Color(0xFF00695C),
-              size: 28,
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Text(
-                title,
-                style: GoogleFonts.inter(
-                  fontSize: 16.0,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.black87,
-                ),
-              ),
-            ),
-            IconButton(
-              icon: const Icon(CupertinoIcons.share, color: Colors.grey),
-              onPressed: () {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Funcionalidade de compartilhar em breve!'),
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('Meus Currículos')),
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : _cvs.isEmpty
+          ? const Center(child: Text("Nenhum currículo criado."))
+          : ListView.builder(
+              itemCount: _cvs.length,
+              itemBuilder: (context, index) {
+                final cv = _cvs[index];
+                return ListTile(
+                  leading: const Icon(
+                    Icons.description,
+                    color: Color(0xFF00695C),
                   ),
+                  title: Text(cv['title'] ?? 'Sem título'),
+                  subtitle: Text('Criado em: ${cv['created_at'] ?? '-'}'),
+                  onTap: () {
+                    context
+                        .push('/edit-cv/${cv['id']}')
+                        .then((_) => _loadCVs());
+                  },
                 );
               },
             ),
-          ],
-        ),
+      floatingActionButton: FloatingActionButton(
+        backgroundColor: const Color(0xFF1A1A1A),
+        onPressed: _createNewCV,
+        child: const Icon(Icons.add, color: Colors.white),
       ),
     );
   }
