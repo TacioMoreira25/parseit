@@ -47,7 +47,7 @@ class _EditJobScreenState extends State<EditJobScreen> {
     final success = await viewModel.updateJobDetails(
       jobId: widget.job.id,
       title: _titleController.text,
-      link: _linkController.text,
+      company: _linkController.text,
       description: _descriptionController.text,
     );
 

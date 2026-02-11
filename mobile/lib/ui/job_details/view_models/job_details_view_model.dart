@@ -1,5 +1,5 @@
 import 'dart:io';
-import 'package:flutter/foundation.dart'; // Para kIsWeb
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 import '../../../data/repositories/job_repository.dart';
@@ -12,9 +12,8 @@ class JobDetailsViewModel extends ChangeNotifier {
   final List<String> _tags;
 
   final FlutterTts flutterTts = FlutterTts();
-
-  // Controle do Carrossel de Cards
   final PageController pageController = PageController();
+
   int _currentIndex = 0;
   int get currentIndex => _currentIndex;
 
@@ -38,15 +37,15 @@ class JobDetailsViewModel extends ChangeNotifier {
 
   Future<void> _setupTts() async {
     try {
-      // Configuração para WEB e MOBILE
       await flutterTts.setLanguage("en-US");
 
-      // Ajuste Fino: 0.5 é muito lento (robótico). 0.9 ou 1.0 é o natural.
-      await flutterTts.setSpeechRate(0.9);
+      // Diferenciação de velocidade entre plataformas
+      double rate = kIsWeb ? 1.0 : 0.5;
+      await flutterTts.setSpeechRate(rate);
+
       await flutterTts.setVolume(1.0);
       await flutterTts.setPitch(1.0);
 
-      // Apenas no Mobile (Android/iOS) esperamos o fim da fala
       if (!kIsWeb && (Platform.isAndroid || Platform.isIOS)) {
         await flutterTts.awaitSpeakCompletion(true);
       }
@@ -62,12 +61,7 @@ class JobDetailsViewModel extends ChangeNotifier {
     try {
       if (_tags.isNotEmpty) {
         _terms = await _jobRepository.lookupVocabulary(_tags);
-        if (_terms.isEmpty) {
-          _errorMessage = 'Nenhum termo encontrado.';
-          _state = DetailsState.success;
-        } else {
-          _state = DetailsState.success;
-        }
+        _state = DetailsState.success;
       } else {
         _state = DetailsState.success;
       }
@@ -81,18 +75,13 @@ class JobDetailsViewModel extends ChangeNotifier {
 
   Future<void> speak(String text) async {
     if (text.isNotEmpty) {
-      // Para o áudio anterior antes de começar um novo (evita sobreposição)
-      await flutterTts.stop();
+      await flutterTts.stop(); // Essencial para Web não travar
       await flutterTts.speak(text);
     }
   }
 
-  // --- Métodos de Navegação (Essenciais para Web) ---
-
   void onPageChanged(int index) {
     _currentIndex = index;
-    // Opcional: Falar automaticamente ao mudar de card
-    // speak(_terms[index].term);
     notifyListeners();
   }
 

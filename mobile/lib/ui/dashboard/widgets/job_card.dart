@@ -1,342 +1,93 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:google_fonts/google_fonts.dart';
-import 'package:provider/provider.dart';
 import '../../../domain/models/job.dart';
-import '../view_models/dashboard_view_model.dart';
 
 class JobCard extends StatelessWidget {
   final Job job;
-
   const JobCard({super.key, required this.job});
 
   @override
   Widget build(BuildContext context) {
-    final statusStyle = _getStatusStyle(job.status);
-    return Card(
-      elevation: 2.0,
-      shadowColor: Colors.black.withOpacity(0.05),
-      margin: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.0)),
-      color: Colors.white,
-      clipBehavior: Clip.antiAlias,
-      child: InkWell(
-        onTap: () => context.push('/details', extra: job),
-        onLongPress: () => _showManagementBottomSheet(context, job),
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _buildHeader(context, statusStyle),
-              const SizedBox(height: 12.0),
-              Text(
-                job.description,
-                style: GoogleFonts.inter(
-                  fontSize: 14.0,
-                  color: Colors.grey[700],
-                  height: 1.5,
-                ),
-                maxLines: 3,
-                overflow: TextOverflow.ellipsis,
-              ),
-              const SizedBox(height: 16.0),
-              if (job.tags.isNotEmpty) _buildTags(),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
+    final colorScheme = Theme.of(context).colorScheme;
 
-  Widget _buildHeader(BuildContext context, _StatusStyle statusStyle) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Expanded(
+    return Card(
+      elevation: 0,
+      margin: const EdgeInsets.only(bottom: 12),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: BorderSide(color: colorScheme.outlineVariant.withOpacity(0.5)),
+      ),
+      color: colorScheme.surfaceVariant.withOpacity(0.3),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(16),
+        onTap: () => context.push('/details', extra: job),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                job.title,
-                style: GoogleFonts.inter(
-                  fontSize: 18.0,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.black87,
-                ),
-              ),
-              const SizedBox(height: 6.0),
               Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(
-                    job.company,
-                    style: GoogleFonts.inter(
-                      fontSize: 14.0,
-                      fontWeight: FontWeight.w500,
-                      color: Colors.grey[600],
+                  Expanded(
+                    child: Text(
+                      job.title,
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ),
-                  const SizedBox(width: 8),
-                  Chip(
-                    label: Text(
-                      job.status,
-                      style: GoogleFonts.inter(
-                        fontSize: 11.0,
-                        fontWeight: FontWeight.bold,
-                        color: statusStyle.textColor,
-                      ),
-                    ),
-                    backgroundColor: statusStyle.backgroundColor,
-                    visualDensity: VisualDensity.compact,
-                    padding: const EdgeInsets.symmetric(horizontal: 6),
-                    side: BorderSide.none,
+                  Icon(
+                    Icons.arrow_forward_ios,
+                    size: 14,
+                    color: colorScheme.primary,
                   ),
                 ],
               ),
-            ],
-          ),
-        ),
-        const SizedBox(width: 8),
-        IconButton(
-          icon: const Icon(CupertinoIcons.ellipsis, color: Colors.grey),
-          onPressed: () => _showManagementBottomSheet(context, job),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildTags() {
-    return Wrap(
-      spacing: 6.0,
-      runSpacing: 6.0,
-      children: job.tags
-          .map(
-            (tag) => Chip(
-              label: Text(
-                tag,
-                style: GoogleFonts.inter(
-                  fontSize: 12.0,
+              const SizedBox(height: 4),
+              Text(
+                job.company,
+                style: TextStyle(
+                  color: colorScheme.onSurfaceVariant,
                   fontWeight: FontWeight.w500,
-                  color: const Color(0xFF00695C),
                 ),
               ),
-              backgroundColor: const Color(0xFFE0F2F1),
-              padding: const EdgeInsets.symmetric(
-                horizontal: 8.0,
-                vertical: 2.0,
-              ),
-              side: BorderSide.none,
-              visualDensity: VisualDensity.compact,
-            ),
-          )
-          .toList(),
-    );
-  }
-
-  void _showManagementBottomSheet(BuildContext context, Job job) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (modalContext) {
-        final viewModel = Provider.of<DashboardViewModel>(
-          modalContext,
-          listen: false,
-        );
-        return SingleChildScrollView(
-          padding: const EdgeInsets.fromLTRB(20, 20, 20, 30),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Gerenciar Vaga',
-                style: GoogleFonts.inter(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
+              if (job.tags.isNotEmpty) ...[
+                const SizedBox(height: 12),
+                Wrap(
+                  spacing: 8,
+                  children: job.tags
+                      .take(3)
+                      .map((tag) => _buildMiniTag(context, tag))
+                      .toList(),
                 ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                job.title,
-                style: GoogleFonts.inter(fontSize: 15, color: Colors.grey[600]),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-              const Divider(height: 32),
-              ListTile(
-                leading: const Icon(
-                  CupertinoIcons.pencil,
-                  color: Colors.blueAccent,
-                ),
-                title: Text(
-                  'Editar Detalhes',
-                  style: GoogleFonts.inter(
-                    fontWeight: FontWeight.w600,
-                    color: Colors.blueAccent,
-                  ),
-                ),
-                onTap: () {
-                  Navigator.pop(modalContext); // Fecha o modal
-                  context.push(
-                    '/edit_job',
-                    extra: job,
-                  ); // Navega para a nova tela de edição
-                },
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10),
-                ),
-              ),
-              const Divider(height: 16, indent: 16, endIndent: 16),
-              Text(
-                'Alterar Status',
-                style: GoogleFonts.inter(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 16,
-                ),
-              ),
-              const SizedBox(height: 10),
-              ...['applied', 'interview', 'offer', 'rejected'].map((status) {
-                final isSelected = job.status == status;
-                final style = _getStatusStyle(status);
-                return ListTile(
-                  title: Text(
-                    status,
-                    style: GoogleFonts.inter(
-                      fontWeight: FontWeight.w500,
-                      color: isSelected ? style.textColor : Colors.black87,
-                    ),
-                  ),
-                  leading: Icon(
-                    isSelected
-                        ? CupertinoIcons.check_mark_circled_solid
-                        : CupertinoIcons.circle,
-                    color: isSelected ? style.textColor : Colors.grey[400],
-                  ),
-                  tileColor: isSelected
-                      ? style.backgroundColor.withOpacity(0.5)
-                      : Colors.transparent,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  onTap: () async {
-                    Navigator.pop(modalContext);
-                    final success = await viewModel.updateJobStatus(
-                      job.id,
-                      status,
-                    );
-                    if (!context.mounted) return;
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text(
-                          success
-                              ? 'Status atualizado para: $status'
-                              : viewModel.errorMessage,
-                        ),
-                        backgroundColor: success ? Colors.green : Colors.red,
-                      ),
-                    );
-                  },
-                );
-              }).toList(),
-              const Divider(height: 32),
-              ListTile(
-                leading: const Icon(CupertinoIcons.trash, color: Colors.red),
-                title: Text(
-                  'Excluir Vaga',
-                  style: GoogleFonts.inter(
-                    color: Colors.red,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                onTap: () {
-                  Navigator.pop(modalContext);
-                  _showDeleteConfirmationDialog(context, viewModel, job);
-                },
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10),
-                ),
-              ),
+              ],
             ],
           ),
-        );
-      },
-    );
-  }
-
-  void _showDeleteConfirmationDialog(
-    BuildContext context,
-    DashboardViewModel viewModel,
-    Job job,
-  ) {
-    showDialog(
-      context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: const Text('Confirmar Exclusão'),
-        content: Text(
-          'Tem certeza que deseja excluir a vaga "${job.title}"? Esta ação não pode ser desfeita.',
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext),
-            child: const Text('Cancelar'),
-          ),
-          FilledButton(
-            onPressed: () async {
-              Navigator.pop(dialogContext);
-              final success = await viewModel.deleteJob(job.id);
-              if (!context.mounted) return;
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text(
-                    success
-                        ? 'Vaga excluída com sucesso'
-                        : viewModel.errorMessage,
-                  ),
-                  backgroundColor: success ? Colors.green : Colors.red,
-                ),
-              );
-            },
-            style: FilledButton.styleFrom(backgroundColor: Colors.red),
-            child: const Text('Excluir'),
-          ),
-        ],
       ),
     );
   }
 
-  _StatusStyle _getStatusStyle(String status) {
-    switch (status.toLowerCase()) {
-      case 'interview':
-        return _StatusStyle(
-          backgroundColor: Colors.purple[100]!,
-          textColor: Colors.purple[800]!,
-        );
-      case 'offer':
-        return _StatusStyle(
-          backgroundColor: Colors.green[100]!,
-          textColor: Colors.green[800]!,
-        );
-      case 'rejected':
-        return _StatusStyle(
-          backgroundColor: Colors.red[100]!,
-          textColor: Colors.red[800]!,
-        );
-      case 'applied':
-      default:
-        return _StatusStyle(
-          backgroundColor: Colors.blue[100]!,
-          textColor: Colors.blue[800]!,
-        );
-    }
+  Widget _buildMiniTag(BuildContext context, String label) {
+    final colorScheme = Theme.of(context).colorScheme;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: colorScheme.primary.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Text(
+        label,
+        style: TextStyle(
+          color: colorScheme.primary,
+          fontSize: 12,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
+    );
   }
-}
-
-class _StatusStyle {
-  final Color backgroundColor;
-  final Color textColor;
-  _StatusStyle({required this.backgroundColor, required this.textColor});
 }

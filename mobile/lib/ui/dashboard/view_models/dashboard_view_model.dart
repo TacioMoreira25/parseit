@@ -14,6 +14,8 @@ class DashboardViewModel extends ChangeNotifier {
   DashboardState _state = DashboardState.initial;
   DashboardState get state => _state;
 
+  bool get isLoading => _state == DashboardState.loading;
+
   List<Job> _jobs = [];
   List<Job> get jobs => _jobs;
 
@@ -25,12 +27,12 @@ class DashboardViewModel extends ChangeNotifier {
     notifyListeners();
 
     try {
-      _jobs = await _jobRepository.fetchJobs();
+      _jobs = await _jobRepository.getJobs(); // Sincronizado com o Repository
       _state = DashboardState.success;
     } catch (e) {
       _state = DashboardState.error;
-      _errorMessage = 'Failed to load jobs. Please try again later.';
-      debugPrint('Error fetching jobs: $e');
+      _errorMessage = 'Falha ao carregar vagas.';
+      debugPrint('Error: $e');
     } finally {
       notifyListeners();
     }
@@ -43,48 +45,27 @@ class DashboardViewModel extends ChangeNotifier {
       notifyListeners();
       return true;
     } catch (e) {
-      debugPrint('Error deleting job: $e');
-      _errorMessage = 'Failed to delete job.';
       return false;
     }
   }
 
-  Future<bool> updateJobStatus(String jobId, String newStatus) async {
-    try {
-      await _jobRepository.updateJobStatus(jobId, newStatus);
-      final index = _jobs.indexWhere((job) => job.id == jobId);
-      if (index != -1) {
-        _jobs[index] = _jobs[index].copyWith(status: newStatus);
-        notifyListeners();
-      }
-      return true;
-    } catch (e) {
-      debugPrint('Error updating job status: $e');
-      _errorMessage = 'Failed to update job status.';
-      return false;
-    }
-  }
-
-  /// Updates the core details of a job.
   Future<bool> updateJobDetails({
     required String jobId,
     required String title,
-    String? link,
+    String? company, // Alterado aqui
     required String description,
   }) async {
     try {
       await _jobRepository.updateJob(
         jobId: jobId,
         title: title,
-        link: link,
+        company: company,
         description: description,
       );
-      // For a complete refresh to get all updated data from server:
       await fetchJobs();
       return true;
     } catch (e) {
-      debugPrint('Error updating job details: $e');
-      _errorMessage = 'Failed to update job details.';
+      debugPrint('Error updating job: $e');
       return false;
     }
   }

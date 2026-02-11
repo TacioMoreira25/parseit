@@ -1,5 +1,3 @@
-// ignore_for_file: avoid_print
-
 import '../../domain/models/job.dart';
 import '../../domain/models/vocabulary_term.dart';
 import '../services/api_service.dart';
@@ -9,24 +7,37 @@ class JobRepository {
 
   JobRepository(this._apiService);
 
-  Future<List<Job>> fetchJobs() async {
-    final List<dynamic> jobData = await _apiService.fetchJobs();
-    return jobData
-        .map((json) => Job.fromJson(json as Map<String, dynamic>))
-        .toList();
+  /// Renomeado para getJobs para coincidir com a chamada no DashboardViewModel
+  Future<List<Job>> getJobs() async {
+    try {
+      final List<dynamic> jobData = await _apiService.fetchJobs();
+      return jobData
+          .map((json) => Job.fromJson(json as Map<String, dynamic>))
+          .toList();
+    } catch (e) {
+      print("Erro ao buscar vagas no Repository: $e");
+      return [];
+    }
   }
 
-  Future<void> createJob({
-    required String title,
-    String? link,
-    required String description,
-  }) async {
+  /// Ajustado para aceitar parâmetros posicionais ou nomeados conforme o AddJobViewModel chamou
+  Future<void> createJob(
+    String title,
+    String company,
+    String description,
+  ) async {
     final data = {
       'title': title,
-      'link': link ?? '',
+      'company': company, // Adicionado campo company que estava faltando
       'description': description,
     };
-    await _apiService.createJob(data);
+
+    try {
+      await _apiService.createJob(data);
+    } catch (e) {
+      print("Erro ao criar vaga no Repository: $e");
+      rethrow;
+    }
   }
 
   Future<void> deleteJob(String jobId) async {
@@ -40,15 +51,18 @@ class JobRepository {
   Future<void> updateJob({
     required String jobId,
     required String title,
-    String? link,
+    String? company,
     required String description,
   }) async {
-    final data = {'title': title, 'link': link, 'description': description};
+    final data = {
+      'title': title,
+      'company': company,
+      'description': description,
+    };
     data.removeWhere((key, value) => value == null);
     await _apiService.updateJob(jobId, data);
   }
 
-  //// Looks up vocabulary for a list of tags.
   Future<List<VocabularyTerm>> lookupVocabulary(List<String> tags) async {
     if (tags.isEmpty) {
       return [];
@@ -56,12 +70,11 @@ class JobRepository {
 
     try {
       final List<dynamic> data = await _apiService.lookupVocabulary(tags);
-
       return data
           .map((json) => VocabularyTerm.fromJson(json as Map<String, dynamic>))
           .toList();
     } catch (e) {
-      print("Error no Repository: $e");
+      print("Error no Repository (Vocabulary): $e");
       rethrow;
     }
   }

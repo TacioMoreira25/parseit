@@ -1,69 +1,58 @@
 import 'package:flutter/material.dart';
 import '../../../data/repositories/job_repository.dart';
 
-enum AddJobState { idle, loading, success, error }
-
 class AddJobViewModel extends ChangeNotifier {
   final JobRepository _jobRepository;
+
+  // Controladores necessários para a UI
+  final TextEditingController titleController = TextEditingController();
+  final TextEditingController companyController = TextEditingController();
+  final TextEditingController descriptionController = TextEditingController();
+
+  bool _isLoading = false;
+  bool get isLoading => _isLoading;
+
   AddJobViewModel(this._jobRepository);
 
-  final titleController = TextEditingController();
-  final linkController = TextEditingController();
-  final descriptionController = TextEditingController();
-
-  AddJobState _state = AddJobState.idle;
-  AddJobState get state => _state;
-
-  String _errorMessage = '';
-  String get errorMessage => _errorMessage;
-
-  Future<bool> submitJob() async {
-    if (titleController.text.isEmpty || descriptionController.text.isEmpty) {
-      _errorMessage = 'Título e Descrição são obrigatórios.';
-      notifyListeners();
+  // Método solicitado pelo erro
+  Future<bool> saveJob() async {
+    if (titleController.text.isEmpty || companyController.text.isEmpty) {
       return false;
     }
 
-    _state = AddJobState.loading;
+    _isLoading = true;
     notifyListeners();
 
     try {
+      // Aqui você chama o seu repositório para salvar
+      // O repositório deve lidar com a extração de tags via backend
       await _jobRepository.createJob(
-        title: titleController.text,
-        link: linkController.text,
-        description: descriptionController.text,
+        titleController.text,
+        companyController.text,
+        descriptionController.text,
       );
 
-      _state = AddJobState.success;
-      notifyListeners();
-
-      _clearForm();
-      _state = AddJobState.idle;
-      notifyListeners();
+      _clearInputs();
       return true;
     } catch (e) {
-      _errorMessage = 'Falha ao enviar a vaga. Tente novamente.';
-      _state = AddJobState.error;
-      notifyListeners();
+      debugPrint("Erro ao salvar vaga: $e");
       return false;
     } finally {
-      if (_state == AddJobState.loading) {
-        _state = AddJobState.idle;
-        notifyListeners();
-      }
+      _isLoading = false;
+      notifyListeners();
     }
   }
 
-  void _clearForm() {
+  void _clearInputs() {
     titleController.clear();
-    linkController.clear();
+    companyController.clear();
     descriptionController.clear();
   }
 
   @override
   void dispose() {
     titleController.dispose();
-    linkController.dispose();
+    companyController.dispose();
     descriptionController.dispose();
     super.dispose();
   }
