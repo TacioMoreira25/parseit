@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'data/repositories/cv_repository.dart';
 import 'data/repositories/job_repository.dart';
 import 'data/services/api_service.dart';
 import 'routing/app_router.dart';
@@ -12,20 +11,14 @@ void main() {
   final ApiService apiService = ApiService();
   // Create repositories
   final JobRepository jobRepository = JobRepository(apiService);
-  final CvRepository cvRepository = CvRepository(apiService);
 
-  runApp(MyApp(jobRepository: jobRepository, cvRepository: cvRepository));
+  runApp(MyApp(jobRepository: jobRepository));
 }
 
 class MyApp extends StatelessWidget {
   final JobRepository jobRepository;
-  final CvRepository cvRepository;
 
-  const MyApp({
-    super.key,
-    required this.jobRepository,
-    required this.cvRepository,
-  });
+  const MyApp({super.key, required this.jobRepository});
 
   @override
   Widget build(BuildContext context) {
@@ -33,7 +26,6 @@ class MyApp extends StatelessWidget {
       providers: [
         // Repositories
         Provider<JobRepository>(create: (_) => JobRepository(ApiService())),
-        Provider<CvRepository>(create: (_) => CvRepository(ApiService())),
 
         // Global ViewModels
         ChangeNotifierProvider(

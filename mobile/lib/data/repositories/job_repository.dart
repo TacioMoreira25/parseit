@@ -1,3 +1,5 @@
+// ignore_for_file: avoid_print
+
 import '../../domain/models/job.dart';
 import '../../domain/models/vocabulary_term.dart';
 import '../services/api_service.dart';
@@ -59,7 +61,7 @@ class JobRepository {
           .map((json) => VocabularyTerm.fromJson(json as Map<String, dynamic>))
           .toList();
     } catch (e) {
-      print("Erro no Repository: $e");
+      print("Error no Repository: $e");
       rethrow;
     }
   }

@@ -23,7 +23,7 @@ func InitDB() *gorm.DB {
 	}
 
 	// Migração Automática (Cria tabelas baseadas nos Models)
-	db.AutoMigrate(&models.Job{}, &models.Vocabulary{}, &models.CV{}, &models.CVBlock{})
+	db.AutoMigrate(&models.Job{}, &models.Vocabulary{})
 
 	log.Println("Banco conectado e migrado com sucesso!")
 	return db
