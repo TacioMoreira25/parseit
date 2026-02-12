@@ -12,31 +12,81 @@ class DashboardScreen extends StatelessWidget {
     final themeProvider = context.watch<ThemeProvider>();
 
     return Scaffold(
+      backgroundColor: Theme.of(context).colorScheme.background,
       appBar: AppBar(
-        title: const Text('Minhas Vagas'),
+        title: Image.asset(
+          'assets/images/logo.png',
+          height: 32,
+          fit: BoxFit.contain,
+        ),
+        centerTitle: false,
         actions: [
           IconButton(
             icon: Icon(
               themeProvider.isDarkMode ? Icons.light_mode : Icons.dark_mode,
             ),
+            tooltip: 'Alternar Tema',
             onPressed: () => context.read<ThemeProvider>().toggleTheme(),
           ),
         ],
       ),
       body: Consumer<DashboardViewModel>(
         builder: (context, viewModel, child) {
-          if (viewModel.isLoading)
+          if (viewModel.isLoading) {
             return const Center(child: CircularProgressIndicator());
-
-          if (viewModel.jobs.isEmpty) {
-            return const Center(child: Text('Nenhuma vaga salva ainda.'));
           }
 
-          return ListView.builder(
-            padding: const EdgeInsets.all(16),
-            itemCount: viewModel.jobs.length,
-            itemBuilder: (context, index) =>
-                JobCard(job: viewModel.jobs[index]),
+          if (viewModel.errorMessage.isNotEmpty) {
+            return Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(Icons.error_outline, size: 48, color: Colors.red),
+                  const SizedBox(height: 16),
+                  Text(viewModel.errorMessage, textAlign: TextAlign.center),
+                  TextButton(
+                    onPressed: viewModel.fetchJobs,
+                    child: const Text("Tentar Novamente"),
+                  ),
+                ],
+              ),
+            );
+          }
+
+          if (viewModel.jobs.isEmpty) {
+            return Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.work_off_outlined,
+                    size: 64,
+                    color: Colors.grey[400],
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    'Nenhuma vaga salva.',
+                    style: TextStyle(fontSize: 18, color: Colors.grey[600]),
+                  ),
+                  const SizedBox(height: 8),
+                  const Text(
+                    'Toque no + para adicionar.',
+                    style: TextStyle(color: Colors.grey),
+                  ),
+                ],
+              ),
+            );
+          }
+
+          return RefreshIndicator(
+            onRefresh: viewModel.fetchJobs,
+            child: ListView.separated(
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
+              itemCount: viewModel.jobs.length,
+              separatorBuilder: (_, __) => const SizedBox(height: 12),
+              itemBuilder: (context, index) =>
+                  JobCard(job: viewModel.jobs[index]),
+            ),
           );
         },
       ),

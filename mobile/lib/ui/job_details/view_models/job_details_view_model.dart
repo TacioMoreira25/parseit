@@ -38,19 +38,14 @@ class JobDetailsViewModel extends ChangeNotifier {
   Future<void> _setupTts() async {
     try {
       await flutterTts.setLanguage("en-US");
-
-      // Diferenciação de velocidade entre plataformas
-      double rate = kIsWeb ? 1.0 : 0.5;
-      await flutterTts.setSpeechRate(rate);
-
+      await flutterTts.setSpeechRate(0.9);
       await flutterTts.setVolume(1.0);
       await flutterTts.setPitch(1.0);
-
       if (!kIsWeb && (Platform.isAndroid || Platform.isIOS)) {
         await flutterTts.awaitSpeakCompletion(true);
       }
     } catch (e) {
-      debugPrint("Erro ao configurar TTS: $e");
+      debugPrint("Erro TTS: $e");
     }
   }
 
@@ -73,9 +68,20 @@ class JobDetailsViewModel extends ChangeNotifier {
     }
   }
 
+  Future<bool> deleteJob(String jobId) async {
+    try {
+      await _jobRepository.deleteJob(jobId);
+      return true;
+    } catch (e) {
+      _errorMessage = "Erro ao excluir vaga";
+      notifyListeners();
+      return false;
+    }
+  }
+
   Future<void> speak(String text) async {
     if (text.isNotEmpty) {
-      await flutterTts.stop(); // Essencial para Web não travar
+      await flutterTts.stop();
       await flutterTts.speak(text);
     }
   }

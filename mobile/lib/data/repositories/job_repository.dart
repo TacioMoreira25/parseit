@@ -7,37 +7,65 @@ class JobRepository {
 
   JobRepository(this._apiService);
 
-  /// Renomeado para getJobs para coincidir com a chamada no DashboardViewModel
-  Future<List<Job>> getJobs() async {
+  Future<List<Job>> fetchJobs() async {
     try {
       final List<dynamic> jobData = await _apiService.fetchJobs();
       return jobData
           .map((json) => Job.fromJson(json as Map<String, dynamic>))
           .toList();
     } catch (e) {
-      print("Erro ao buscar vagas no Repository: $e");
-      return [];
+      print("Erro ao buscar vagas: $e");
+      throw Exception("Falha ao carregar vagas. Verifique sua conexão.");
     }
   }
 
-  /// Ajustado para aceitar parâmetros posicionais ou nomeados conforme o AddJobViewModel chamou
-  Future<void> createJob(
-    String title,
-    String company,
-    String description,
-  ) async {
+  Future<void> createJob({
+    required String title,
+    required String company,
+    required String link,
+    required String description,
+    required String status,
+    required String jobType,
+    required String location,
+    required String salary,
+  }) async {
     final data = {
       'title': title,
-      'company': company, // Adicionado campo company que estava faltando
+      'company': company,
+      'link': link,
       'description': description,
+      'status': status,
+      'job_type': jobType,
+      'location': location,
+      'salary': salary,
     };
+    await _apiService.createJob(data);
+  }
 
-    try {
-      await _apiService.createJob(data);
-    } catch (e) {
-      print("Erro ao criar vaga no Repository: $e");
-      rethrow;
-    }
+  Future<void> updateJob({
+    required String jobId,
+    required String title,
+    required String company,
+    required String link,
+    required String description,
+    required String status,
+    required String jobType,
+    required String location,
+    required String salary,
+  }) async {
+    final data = {
+      'title': title,
+      'company': company,
+      'link': link,
+      'description': description,
+      'status': status,
+      'job_type': jobType,
+      'location': location,
+      'salary': salary,
+    };
+    data.removeWhere((key, value) => value == null);
+
+    await _apiService.updateJob(jobId, data);
   }
 
   Future<void> deleteJob(String jobId) async {
@@ -48,34 +76,16 @@ class JobRepository {
     await _apiService.updateStatus(jobId, newStatus);
   }
 
-  Future<void> updateJob({
-    required String jobId,
-    required String title,
-    String? company,
-    required String description,
-  }) async {
-    final data = {
-      'title': title,
-      'company': company,
-      'description': description,
-    };
-    data.removeWhere((key, value) => value == null);
-    await _apiService.updateJob(jobId, data);
-  }
-
   Future<List<VocabularyTerm>> lookupVocabulary(List<String> tags) async {
-    if (tags.isEmpty) {
-      return [];
-    }
-
+    if (tags.isEmpty) return [];
     try {
       final List<dynamic> data = await _apiService.lookupVocabulary(tags);
       return data
           .map((json) => VocabularyTerm.fromJson(json as Map<String, dynamic>))
           .toList();
     } catch (e) {
-      print("Error no Repository (Vocabulary): $e");
-      rethrow;
+      print("Erro no Repository (Vocabulário): $e");
+      return [];
     }
   }
 }

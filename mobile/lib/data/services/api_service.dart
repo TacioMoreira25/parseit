@@ -4,18 +4,13 @@ import '../../config/dio_client.dart';
 class ApiService {
   final Dio _dio = DioClient.instance;
 
-  // ... existing job methods ...
-
   Future<List<dynamic>> fetchJobs() async {
     try {
       final response = await _dio.get('/jobs');
       if (response.statusCode == 200 && response.data is List) {
         return response.data as List;
       } else {
-        throw DioException(
-          requestOptions: response.requestOptions,
-          error: 'Failed to load jobs',
-        );
+        return [];
       }
     } on DioException {
       rethrow;

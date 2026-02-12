@@ -193,38 +193,42 @@ func (h *JobHandler) UpdateJob(c *gin.Context) {
 		return
 	}
 
-	// Define uma struct para o payload de atualização
+	// Define uma struct para o payload de atualização (com ponteiros para saber o que veio nulo)
 	var updatePayload struct {
 		Title       *string `json:"title"`
+		Company     *string `json:"company"`     // Novo
 		Description *string `json:"description"`
 		Link        *string `json:"link"`
+		Status      *string `json:"status"`      // Novo (para edição completa)
+		JobType     *string `json:"job_type"`    // Novo
+		Location    *string `json:"location"`    // Novo
+		Salary      *string `json:"salary"`      // Novo
 	}
 
-	// Faz o bind do JSON, ignorando campos não enviados
+	// Faz o bind do JSON
 	if err := c.ShouldBindJSON(&updatePayload); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "JSON inválido: " + err.Error()})
 		return
 	}
 
-	// Atualiza o modelo do GORM com os novos valores, se eles não forem nulos
+	// Atualiza o mapa de mudanças
 	updates := make(map[string]interface{})
-	if updatePayload.Title != nil {
-		updates["title"] = *updatePayload.Title
-	}
-	if updatePayload.Description != nil {
-		updates["description"] = *updatePayload.Description
-	}
-	if updatePayload.Link != nil {
-		updates["link"] = *updatePayload.Link
-	}
+	
+	if updatePayload.Title != nil { updates["title"] = *updatePayload.Title }
+	if updatePayload.Company != nil { updates["company"] = *updatePayload.Company }
+	if updatePayload.Description != nil { updates["description"] = *updatePayload.Description }
+	if updatePayload.Link != nil { updates["link"] = *updatePayload.Link }
+	if updatePayload.Status != nil { updates["status"] = *updatePayload.Status }
+	if updatePayload.JobType != nil { updates["job_type"] = *updatePayload.JobType }
+	if updatePayload.Location != nil { updates["location"] = *updatePayload.Location }
+	if updatePayload.Salary != nil { updates["salary"] = *updatePayload.Salary }
 
-	// Se nada foi enviado, não faz nada
 	if len(updates) == 0 {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Nenhum campo para atualizar foi fornecido"})
 		return
 	}
 
-	// Aplica as atualizações no banco de dados
+	// Aplica as atualizações
 	if result := h.DB.Model(&job).Updates(updates); result.Error != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Falha ao atualizar a vaga: " + result.Error.Error()})
 		return

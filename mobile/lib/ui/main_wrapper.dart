@@ -1,4 +1,3 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
@@ -14,16 +13,20 @@ class MainWrapper extends StatelessWidget {
 
     return Scaffold(
       body: const DashboardScreen(),
+      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
       floatingActionButton: FloatingActionButton(
         heroTag: 'add_job_fab',
         onPressed: () {
-          context.push('/add_job').then((_) {
+          context.push('/add_job').then((result) {
             dashboardViewModel.fetchJobs();
+            dashboardViewModel.startTagPolling();
           });
         },
         backgroundColor: const Color(0xFF1A1A1A),
+        foregroundColor: Colors.white,
+        elevation: 4,
         shape: const CircleBorder(),
-        child: const Icon(CupertinoIcons.add, color: Colors.white),
+        child: const Icon(Icons.add, size: 28),
       ),
     );
   }
